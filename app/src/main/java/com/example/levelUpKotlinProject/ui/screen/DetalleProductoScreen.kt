@@ -25,13 +25,6 @@ import kotlinx.coroutines.launch
 
 /**
  * DetalleProductoScreen: Muestra información completa de un producto
- * 
- * Funcionalidades:
- * - Ver descripción, precio, stock
- * - Agregar al carrito
- * - Volver a la lista
- * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

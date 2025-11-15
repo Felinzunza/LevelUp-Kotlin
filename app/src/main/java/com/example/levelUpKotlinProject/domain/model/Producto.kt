@@ -22,7 +22,7 @@ data class Producto(
      */
     fun precioFormateado(): String {
         val precioEntero = precio.toInt()
-        return "$$${precioEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
+        return "$${precioEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
 
     }
     

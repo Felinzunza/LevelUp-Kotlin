@@ -6,7 +6,6 @@ import com.example.levelUpKotlinProject.data.local.entity.DetalleOrdenEntity
  * Representa un item individual en el carrito
  * Incluye lógica de negocio (subtotal calculado)
  * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 data class ItemCarrito(
     val producto: Producto,
@@ -24,7 +23,6 @@ fun ItemCarrito.toDetalleEntity(ordenId: Long): DetalleOrdenEntity {
         productoId = this.producto.id,
         nombre = this.producto.nombre,
         descripcion = this.producto.descripcion,
-        // CRÍTICO: El precio cobrado es el precio unitario actual del producto
         precio = this.producto.precio,
         imagenUrl = this.producto.imagenUrl,
         categoria = this.producto.categoria,

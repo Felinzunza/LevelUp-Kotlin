@@ -3,8 +3,6 @@ package com.example.levelUpKotlinProject.domain.model
 /**
  * Representa el carrito de compras completo
  * Incluye lógica de negocio (totales calculados)
- * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 data class Carrito(
     val items: List<ItemCarrito> = emptyList()

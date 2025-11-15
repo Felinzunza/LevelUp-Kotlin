@@ -24,7 +24,7 @@ data class Orden(
 
     fun totalFormateado(): String {
         val totalEntero = total.toInt()
-        return "$$${totalEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
+        return "$${totalEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
 
     }
     val estadoDisplay:String

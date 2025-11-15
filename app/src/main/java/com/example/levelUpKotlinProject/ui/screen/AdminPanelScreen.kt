@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +46,10 @@ fun AdminPanelScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Panel Admin")
+                        Text("Panel Admin",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.secondary
+                             )
                         Text(
                             text = "Sesión: $usernameAdmin",
                             fontSize = 12.sp,
@@ -67,7 +71,7 @@ fun AdminPanelScreen(
             if (pestanaSeleccionada == 0) {
                 FloatingActionButton(
                     onClick = onAgregarProducto,
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.secondary
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Add,
@@ -192,7 +196,11 @@ fun AdminProductoCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp,
+        ),
+        colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
     ) {
         Row(
             modifier = Modifier
@@ -210,12 +218,12 @@ fun AdminProductoCard(
                 Text(
                     text = producto.categoria,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.secondary
                 )
                 Text(
                     text = "Stock: ${producto.stock} | $${producto.precio.toInt()}",
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
 
@@ -224,7 +232,7 @@ fun AdminProductoCard(
                     Icon(
                         imageVector = Icons.Filled.Edit,
                         contentDescription = "Editar",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                 }
                 IconButton(onClick = onEliminar) {
@@ -302,7 +310,7 @@ fun OrdenCard(
                 Text(
                     text = "Total: ${orden.totalFormateado()}",
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
 
@@ -321,7 +329,7 @@ fun OrdenCard(
 
                 Button(
                     onClick = onDetalleClick,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 ) {
                     Text("Detalle")
                 }
@@ -413,7 +421,7 @@ fun EstadisticaCard(
                 imageVector = icono,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.secondary
             )
         }
     }

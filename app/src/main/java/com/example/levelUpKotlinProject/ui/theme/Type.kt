@@ -1,35 +1,38 @@
 package com.example.levelUpKotlinProyect.ui.theme
 
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+// 👈 1. Importar R para acceder a la carpeta res/font
+import com.example.levelUpKotlinProject.R
 
-// --- 1. DEFINICIÓN DE COLORES BASE ---
-// Definimos los colores aquí para asegurar que RetroColorPalette los vea.
-val BlackBackground = Color(0xFF000000)
-val WhiteText = Color(0xFFFFFFFF)
-val RetroViolet = Color(0xFF8A2BE2)
-
-// --- 2. ESQUEMA DE COLOR RETRO (DARK) ---
-private val RetroColorPalette = darkColorScheme(
-    primary = RetroViolet,          // Violeta para Cards, Iconos (el color principal)
-    secondary = RetroViolet,        // Se puede usar para elementos secundarios
-    background = BlackBackground,   // FONDO NEGRO
-    surface = BlackBackground,      // FONDO NEGRO
-    onPrimary = WhiteText,          // Texto que va sobre el violeta
-    onBackground = WhiteText,       // Texto que va sobre el negro
-    onSurface = WhiteText           // Texto que va sobre el negro
+// 👈 2. Definir la familia de fuentes "Roboto"
+// Asegúrate de que los nombres de archivo (ej. roboto_regular) coincidan
+// con los nombres de tus archivos .ttf en la carpeta res/font.
+val Roboto = FontFamily(
+    Font(R.font.roboto_regular, FontWeight.Normal),
+    Font(R.font.roboto_bold, FontWeight.Bold)
+    // Puedes añadir más (italic, light, etc.) si los tienes
 )
 
-// --- 3. FUNCIÓN DEL TEMA ---
-@Composable
-fun LevelUpKotlinProjectTheme(
-    // ... Parámetros por defecto
-    content: @Composable () -> Unit
-) {
-    MaterialTheme(
-        colorScheme = RetroColorPalette,
-        typography = Typography(), // Esta es la variable Typography de Type.kt
-        content = content
+// 👈 3. Crear el objeto Typography USANDO la familia Roboto
+val Typography = Typography(
+    bodyLarge = TextStyle(
+        fontFamily = Roboto, // <--- Usando Roboto
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = Roboto, // <--- Usando Roboto
+        fontWeight = FontWeight.Bold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
     )
-}
+    /* Otros estilos de texto van aquí */
+)

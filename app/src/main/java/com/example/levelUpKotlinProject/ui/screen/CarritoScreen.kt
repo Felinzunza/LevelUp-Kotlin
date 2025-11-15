@@ -33,9 +33,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 
 // --- PANTALLA PRINCIPAL: CarritoScreen (Ahora maneja Checkout) ---
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,7 +100,7 @@ fun CarritoScreen(
                                 text = formatearPrecio(totalPagar),
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -198,7 +200,7 @@ fun CarritoScreen(
  */
 fun formatearPrecio(precio: Double): String {
     val precioEntero = precio.toInt()
-    return "$$${precioEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
+    return "$${precioEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
 }
 
 @Composable
@@ -267,11 +269,13 @@ fun CarritoItemCard(
                         modifier = Modifier.size(32.dp),
                         enabled = item.cantidad > 1
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Disminuir",
-                            tint = if (item.cantidad > 1)
-                                MaterialTheme.colorScheme.primary
+                        Text(
+                            text = "-",
+                            fontSize = 22.sp, // Tamaño grande para que parezca ícono
+                            fontWeight = FontWeight.Bold,
+                            // Aplicamos el color (deshabilitado o primario)
+                            color = if (item.cantidad > 1)
+                                MaterialTheme.colorScheme.secondary
                             else
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                         )
@@ -291,7 +295,7 @@ fun CarritoItemCard(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Aumentar",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -299,7 +303,7 @@ fun CarritoItemCard(
                     text = "Subtotal: ${formatearPrecio(item.subtotal)}",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
             IconButton(onClick = onEliminarClick) {

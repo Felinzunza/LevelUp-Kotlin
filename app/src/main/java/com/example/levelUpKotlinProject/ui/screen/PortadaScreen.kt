@@ -1,5 +1,6 @@
 package com.example.levelUpKotlinProject.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -8,10 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.levelUpKotlinProject.R
 
 /**
  * PortadaScreen: Pantalla de bienvenida de la tienda
@@ -33,36 +36,26 @@ fun PortadaScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Icono grande de tienda
-            Icon(
-                imageVector = Icons.Default.ShoppingCart,
+            Image(
+                // Carga la imagen desde res/drawable/logo_tienda.png
+                painter = painterResource(id = R.drawable.icono_levelup),
                 contentDescription = "Logo",
-                modifier = Modifier.size(120.dp),
-                tint = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(280.dp)
+                // Nota: Se elimina el 'tint' porque la imagen ya tiene color
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Nombre de la tienda
-            Text(
-                text = "🎮 Level Up ⚡",
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
+            Spacer(modifier = Modifier.height(-2.dp))
             // Slogan
             Text(
                 text = "Tu tienda gaming de confianza",
                 fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.offset(y = (-30).dp)
             )
             
-            Spacer(modifier = Modifier.height(40.dp))
-            
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Descripción
             Card(
                 modifier = Modifier.fillMaxWidth(),

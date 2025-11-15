@@ -11,6 +11,21 @@ val BlackBackground = Color(0xFF000000) // #000000
 val WhiteText = Color(0xFFFFFFFF)       // #FFFFFF
 val RetroViolet = Color(0xFF8A2BE2)     // El color de las cards
 
+val LetraAmarilla = Color(0xFFFFCC00) // Amarillo claro
+
+val VerdeOpaco = Color(0x8000FF00) // Verde con 50% de opacidad
+
+val Rojo = Color(0xFFFF1100) // Rojo muy claro
+
+// --- Claro =
+
+// ---
+
+
+
+
+
+
 // --- 2. ESQUEMA DE COLOR OSCURO ---
 // Este esquema asegura el contraste para un look "Dark Mode"
 private val RetroColorPalette = darkColorScheme(
@@ -19,7 +34,13 @@ private val RetroColorPalette = darkColorScheme(
     surface = BlackBackground,      // ¡FONDO NEGRO para contenedores!
     onPrimary = WhiteText,          // Texto sobre el violeta
     onBackground = WhiteText,       // ¡TEXTO BLANCO sobre el negro!
-    onSurface = WhiteText           // ¡TEXTO BLANCO sobre el negro!
+    onSurface = WhiteText,           // ¡TEXTO BLANCO sobre el negro!
+    secondary = LetraAmarilla,      // ¡TEXTO AMARILLO!
+    tertiaryContainer = VerdeOpaco, // ¡VERDE OSCURO!
+    error = Rojo,              // ¡ROJO CLARO!
+
+
+
 )
 
 // --- 3. APLICAR EL TEMA ---
