@@ -23,8 +23,6 @@ import com.example.levelUpKotlinProject.domain.model.Producto
  * - Modo editar (productoExistente != null)
  * - Validaciones de todos los campos
  * - Mensajes de error específicos
- * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

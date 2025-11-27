@@ -20,6 +20,7 @@ data class Usuario(
     val nombre: String,
     val apellido: String,
     val fechaNacimiento: Date,
+    val username: String,
     val email: String,
     val password: String,
     val telefono: String?,

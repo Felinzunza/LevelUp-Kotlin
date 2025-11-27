@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.levelUpKotlinProject.data.repository.UsuarioRepository
+import com.example.levelUpKotlinProject.domain.model.Usuario
 import com.example.levelUpKotlinProject.domain.validator.ValidadorFormulario
+import com.example.levelUpKotlinProject.ui.state.ErroresLogin
 import com.example.levelUpKotlinProject.ui.state.LoginUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,53 +58,36 @@ class LoginViewModel(private val usuarioRepository: UsuarioRepository) : ViewMod
     /**
      * Intenta iniciar sesión llamando al repositorio.
      */
-    fun iniciarSesion(onExito: () -> Unit) {
-        val emailError = ValidadorFormulario.validarEmail(_uiState.value.formulario.email)
-        val passwordError = if (_uiState.value.formulario.password.isBlank()) "La contraseña es obligatoria" else null
+    fun iniciarSesion(onExito: (Usuario) -> Unit) {
+        _uiState.value = _uiState.value.copy(estaCargando = true, errores = ErroresLogin())
 
-        if (emailError != null || passwordError != null) {
-            _uiState.value = _uiState.value.copy(
-                errores = _uiState.value.errores.copy(
-                    emailError = emailError,
-                    passwordError = passwordError,
-                    credencialesInvalidasError = null
-                )
-            )
-            return
-        }
-
-        if (esFormularioValidoParaEnviar()) {
-            _uiState.value = _uiState.value.copy(estaCargando = true)
-
+        viewModelScope.launch {
             val email = _uiState.value.formulario.email
             val password = _uiState.value.formulario.password
 
-            // La llamada al repositorio se hace en IO (hilo secundario)
-            viewModelScope.launch(Dispatchers.IO) {
-                val credencialesValidas = usuarioRepository.validarCredenciales(email, password)
+            // 1. Buscamos el usuario completo en la BD
+            // Nota: Esto asume que tienes un método en tu repo que devuelve el usuario completo si la pass coincide
+            // Si no lo tienes, úsalo así:
 
-                // El cambio de UI y la navegación DEBEN hacerse en el hilo principal
-                withContext(Dispatchers.Main) { // SOLUCIÓN: Cambiar al hilo principal para la UI/navegación
-                    if (credencialesValidas) {
-                        _uiState.value = _uiState.value.copy(
-                            estaCargando = false,
-                            loginExitoso = true,
-                            errores = _uiState.value.errores.copy(credencialesInvalidasError = null)
-                        )
-                        onExito() // ESTO LLAMA A NAVIGATE, AHORA ES SEGURO EN EL HILO PRINCIPAL
-                    } else {
-                        _uiState.value = _uiState.value.copy(
-                            estaCargando = false,
-                            errores = _uiState.value.errores.copy(
-                                credencialesInvalidasError = "Correo o contraseña incorrectos."
-                            )
-                        )
-                    }
+            val esValido = usuarioRepository.validarCredenciales(email, password)
+
+            if (esValido) {
+                // Si es válido, buscamos sus datos para obtener el nombre
+                // (UsuarioRepository debe tener obtenerUsuarioPorEmail o similar)
+                val usuario = usuarioRepository.obtenerUsuarioPorEmail(email)
+                    ?: usuarioRepository.obtenerUsuarioPorUsername(email) // Intento por username
+
+                if (usuario != null) {
+                    onExito(usuario) // 👈 Pasamos el usuario encontrado a la pantalla
+                } else {
+                    _uiState.value = _uiState.value.copy(estaCargando = false)
                 }
+            } else {
+                val errores = ErroresLogin(credencialesInvalidasError = "Credenciales incorrectas")
+                _uiState.value = _uiState.value.copy(estaCargando = false, errores = errores)
             }
         }
     }
-}
 
 /**
  * Factory para LoginViewModel
@@ -115,4 +100,5 @@ class LoginViewModelFactory(private val usuarioRepository: UsuarioRepository) : 
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
+}
 }

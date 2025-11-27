@@ -1,6 +1,7 @@
 package com.example.levelUpKotlinProject.data.repository
 
 import com.example.levelUpKotlinProject.data.local.dao.UsuarioDao
+import com.example.levelUpKotlinProject.data.local.entity.UsuarioEntity
 import com.example.levelUpKotlinProject.data.local.entity.toEntity
 import com.example.levelUpKotlinProject.data.local.entity.toUsuario
 import com.example.levelUpKotlinProject.domain.model.Usuario
@@ -42,15 +43,55 @@ class UsuarioRepository(private val usuarioDao: UsuarioDao) {
     /**
      * Valida si existe un usuario con el email y password dados.
      */
-    suspend fun validarCredenciales(email: String, password: String): Boolean {
-        // La función del DAO devuelve UsuarioEntity? (nullable), pero Room puede lanzar una excepción en la conversión.
+    suspend fun validarCredenciales(identificador: String, password: String): Boolean {
+        // 1. Definir una variable para el usuario encontrado
+        var usuarioEncontrado: UsuarioEntity? = null
+
+        // Usamos el identificador para buscar, ya sea por email o por username
+
+        // A) Intentar buscar por Email (si el identificador parece un email)
+        if (android.util.Patterns.EMAIL_ADDRESS.matcher(identificador).matches()) {
+            usuarioEncontrado = usuarioDao.obtenerUsuarioPorEmail(identificador)
+        }
+
+        // B) Si no se encontró por email o no era un email, intentar buscar por Username
+        if (usuarioEncontrado == null) {
+            usuarioEncontrado = usuarioDao.obtenerUsuarioPorUsername(identificador)
+        }
+
+        // 2. Intentar validar la contraseña
         return try {
-            usuarioDao.obtenerUsuarioPorEmailYPassword(email, password) != null
+            if (usuarioEncontrado != null) {
+                // **PUNTO CLAVE:** Comparar la contraseña en texto plano con la contraseña almacenada.
+                // NOTA DE SEGURIDAD: En producción, aquí se usaría bcrypt o PBKDF2.
+                return usuarioEncontrado.password == password
+            }
+
+            // Si no se encontró el usuario, retorna false
+            false
+
         } catch (e: Exception) {
-            // Capturar cualquier excepción de Room (corrupción de datos, error de I/O)
+            // Capturar excepciones de Room (I/O, conversión, etc.)
             false
         }
     }
+
+    suspend fun obtenerUsuarioPorEmail(email: String): Usuario? {
+        return try {
+            usuarioDao.obtenerUsuarioPorEmail(email)?.toUsuario()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun obtenerUsuarioPorUsername(username: String): Usuario? {
+        return try {
+            usuarioDao.obtenerUsuarioPorUsername(username)?.toUsuario()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 
     // --- ESCRITURA: INSERTAR (Correcto) ---
     suspend fun insertarUsuario(usuario: Usuario): Long {

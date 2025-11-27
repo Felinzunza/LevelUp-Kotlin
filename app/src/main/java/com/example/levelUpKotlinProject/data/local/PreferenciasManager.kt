@@ -16,7 +16,6 @@ import android.content.SharedPreferences
  * - Configuraciones
  * - Preferencias de UI (tema oscuro, etc.)
  * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 class PreferenciasManager(context: Context) {
     
@@ -32,6 +31,11 @@ class PreferenciasManager(context: Context) {
         // Claves (constantes para evitar typos)
         private const val KEY_ADMIN_LOGUEADO = "admin_logueado"
         private const val KEY_USERNAME_ADMIN = "username_admin"
+
+        private const val KEY_USUARIO_LOGUEADO = "usuario_logueado"
+        private const val KEY_EMAIL_USUARIO = "email_usuario"
+
+        private const val KEY_NOMBRE_USUARIO = "nombre_usuario" // 👈 NUEVA CLAVE
         
         // Credenciales por defecto (en app real, estarían en BD segura)
         const val ADMIN_USERNAME = "admin"
@@ -80,5 +84,48 @@ class PreferenciasManager(context: Context) {
      */
     fun validarCredencialesAdmin(username: String, password: String): Boolean {
         return username == ADMIN_USERNAME && password == ADMIN_PASSWORD
+    }
+
+
+    // --- GESTIÓN DE SESIÓN DE USUARIO (CLIENTE) ---
+
+    fun guardarSesionUsuario(email: String) {
+        prefs.edit().apply {
+            putBoolean(KEY_USUARIO_LOGUEADO, true)
+            putString(KEY_EMAIL_USUARIO, email)
+            apply()
+        }
+    }
+
+    fun estaUsuarioLogueado(): Boolean {
+        return prefs.getBoolean(KEY_USUARIO_LOGUEADO, false)
+    }
+
+    fun obtenerEmailUsuario(): String? {
+        return prefs.getString(KEY_EMAIL_USUARIO, null)
+    }
+
+
+
+    fun guardarSesionUsuario(email: String, nombre: String) {
+        prefs.edit().apply {
+            putBoolean(KEY_USUARIO_LOGUEADO, true)
+            putString(KEY_EMAIL_USUARIO, email)
+            putString(KEY_NOMBRE_USUARIO, nombre) // 👈 Guardamos el nombre
+            apply()
+        }
+    }
+
+    fun obtenerNombreUsuario(): String? {
+        return prefs.getString(KEY_NOMBRE_USUARIO, "Usuario") // Devuelve "Usuario" si no hay nombre
+    }
+
+    fun cerrarSesionUsuario() {
+        prefs.edit().apply {
+            remove(KEY_USUARIO_LOGUEADO)
+            remove(KEY_EMAIL_USUARIO)
+            remove(KEY_NOMBRE_USUARIO) // 👈 Borramos el nombre al salir
+            apply()
+        }
     }
 }

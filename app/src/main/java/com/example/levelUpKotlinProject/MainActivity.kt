@@ -4,51 +4,52 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Surface
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.levelUpKotlinProject.data.local.AppDatabase
 import com.example.levelUpKotlinProject.data.local.PreferenciasManager
 import com.example.levelUpKotlinProject.data.local.ProductoInicializador
+import com.example.levelUpKotlinProject.data.local.UsuarioInicializador
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.data.repository.OrdenRepository
 import com.example.levelUpKotlinProject.data.repository.ProductoRepository
-import com.example.levelUpKotlinProject.data.repository.UsuarioRepository // AÑADIDO
+import com.example.levelUpKotlinProject.data.repository.UsuarioRepository
 import com.example.levelUpKotlinProject.ui.navigation.NavGraph
 import com.example.levelUpKotlinProject.ui.theme.LevelUpKotlinProjectTheme
-import com.example.levelUpKotlinProject.ui.viewmodel.CarritoViewModel
-import com.example.levelUpKotlinProject.ui.viewmodel.CarritoViewModelFactory
-import com.example.levelUpKotlinProject.ui.viewmodel.OrdenViewModel
-import com.example.levelUpKotlinProject.ui.viewmodel.OrdenesViewModelFactory
-import com.example.levelUpKotlinProject.ui.viewmodel.ProductoViewModel
-import com.example.levelUpKotlinProject.ui.viewmodel.ProductoViewModelFactory
+import com.example.levelUpKotlinProject.ui.viewmodel.*
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Crear base de datos
+        // 1. Crear base de datos (Síncrono - Singleton rápido)
         val database = AppDatabase.getDatabase(applicationContext)
 
-        // Inicializar productos de ejemplo (solo primera vez)
-        ProductoInicializador.inicializarProductos(applicationContext)
+        // 2. Inicialización ASÍNCRONA de datos (Previene ANR y bloqueos)
+        lifecycleScope.launch {
+            // Ambas funciones son 'suspend' y usan Dispatchers.IO internamente
+            ProductoInicializador.inicializarProductos(applicationContext)
+            UsuarioInicializador.inicializarAdmin(applicationContext)
+        }
 
-        // Crear repositorios
+        // 3. Crear repositorios
         val productoRepository = ProductoRepository(database.productoDao())
         val ordenRepository = OrdenRepository(database.ordenDao(), database.carritoDao())
         val carritoRepository = CarritoRepository(database.carritoDao())
-        val usuarioRepository = UsuarioRepository(database.usuarioDao()) // REQUERIDO
+        val usuarioRepository = UsuarioRepository(database.usuarioDao())
 
-        // Crear PreferenciasManager para sesión admin
+        // 4. Crear PreferenciasManager
         val preferenciasManager = PreferenciasManager(applicationContext)
 
         setContent {
             LevelUpKotlinProjectTheme {
                 Surface {
-                    // Crear NavController para gestionar navegación
                     val navController = rememberNavController()
 
-                    // Crear ViewModel con Factory
+                    // Crear ViewModels
                     val productoViewModel: ProductoViewModel = viewModel(
                         factory = ProductoViewModelFactory(productoRepository)
                     )
@@ -65,16 +66,21 @@ class MainActivity : ComponentActivity() {
                         )
                     )
 
-                    // NavGraph: Define todas las pantallas y rutas
+                    val registroViewModel: RegistroViewModel = viewModel(
+                        factory = RegistroViewModelFactory(usuarioRepository)
+                    )
+
+                    // Configurar Navegación
                     NavGraph(
                         navController = navController,
-                        usuarioRepository = usuarioRepository, // PASADO
+                        usuarioRepository = usuarioRepository,
                         productoRepository = productoRepository,
                         carritoRepository = carritoRepository,
                         ordenRepository = ordenRepository,
                         productoViewModel = productoViewModel,
                         ordenViewModel = ordenViewModel,
                         carritoViewModel = carritoViewModel,
+                        registroViewModel = registroViewModel,
                         preferenciasManager = preferenciasManager,
                     )
                 }

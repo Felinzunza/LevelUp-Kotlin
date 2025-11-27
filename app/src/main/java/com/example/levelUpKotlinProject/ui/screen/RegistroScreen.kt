@@ -17,8 +17,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.levelUpKotlinProject.data.repository.UsuarioRepository // AÑADIDO
+import com.example.levelUpKotlinProject.domain.model.Rol
+import com.example.levelUpKotlinProject.domain.model.Usuario
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModelFactory
+import java.util.Date
 
 /**
  * RegistroScreen: Formulario de registro de usuario
@@ -211,10 +214,42 @@ fun RegistroScreen(
             // Botón Registrarse
             Button(
                 onClick = {
-                    viewModel.registrar(onExito = onRegistroExitoso)
+                    // 1. Primero validamos que el formulario esté correcto
+                    if (viewModel.esFormularioValido()) {
+
+                        // 2. Creamos el objeto Usuario con los datos del formulario (uiState)
+                        // Generamos un RUT temporal para evitar el crash por duplicados
+                        val rutTemporal = "RUT-${System.currentTimeMillis().toString().takeLast(6)}"
+
+                        val nuevoUsuario = Usuario(
+                            id = 0,
+                            rut = rutTemporal,
+                            nombre = uiState.formulario.nombreCompleto, // Usamos el nombre del formulario
+                            apellido = "", // Puedes separar el apellido si quieres
+                            username = uiState.formulario.email.split("@")[0],
+                            email = uiState.formulario.email,
+                            password = uiState.formulario.password,
+                            telefono = uiState.formulario.telefono,
+                            fechaNacimiento = Date(),
+                            fechaRegistro = Date(),
+                            rol = Rol.USUARIO
+                        )
+
+                        // 3. Llamamos a la función pasando AMBOS parámetros:
+                        //    - El usuario creado
+                        //    - La función a ejecutar al terminar (onSuccess)
+                        viewModel.agregarUsuario(
+                            usuario = nuevoUsuario,
+                            onSuccess = {
+                                onRegistroExitoso()
+                            }
+                        )
+                    }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = viewModel.esFormularioValido() && !uiState.estaGuardando
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                enabled = uiState.formulario.aceptaTerminos
             ) {
                 if (uiState.estaGuardando) {
                     CircularProgressIndicator(
@@ -224,14 +259,6 @@ fun RegistroScreen(
                 } else {
                     Text("Registrarse")
                 }
-            }
-
-            // Botón Cancelar
-            OutlinedButton(
-                onClick = onVolverClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancelar")
             }
         }
     }

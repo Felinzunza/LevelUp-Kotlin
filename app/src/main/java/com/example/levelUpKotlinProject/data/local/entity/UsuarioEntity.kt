@@ -13,48 +13,45 @@ data class UsuarioEntity(
     val rut: String,
     val nombre: String,
     val apellido: String,
-    val fechaNacimiento: Long, // Almacenado como Long
+    val fechaNacimiento: Long, // Room guarda Long
+    val username: String,
     val email: String,
     val password: String,
     val telefono: String?,
-    val fechaRegistro: Long, // Almacenado como Long
-    val rol: String = "USUARIO", // Almacenado como String
+    val fechaRegistro: Long, // Room guarda Long
+    val rol: String = "USUARIO", // Room guarda String
 )
 
-// --- A) De Entidad a Modelo (Al leer de la DB - CORRECCIÓN CRÍTICA) ---
+// Conversión Entidad -> Modelo
 fun UsuarioEntity.toUsuario() = Usuario(
     id = id,
     rut = rut,
     nombre = nombre,
     apellido = apellido,
-    // Conversión: Long a Date
-    fechaNacimiento = Date(fechaNacimiento),
+    fechaNacimiento = Date(fechaNacimiento), // Long a Date
+    username = username,
     email = email,
     password = password,
     telefono = telefono,
-    // Conversión: Long a Date
-    fechaRegistro = Date(fechaRegistro),
-    // CONVERSIÓN CRÍTICA: Intenta convertir String a Enum, usa USUARIO si falla (DEFENSIVO)
+    fechaRegistro = Date(fechaRegistro), // Long a Date
     rol = try {
         Rol.valueOf(rol)
-    } catch (e: IllegalArgumentException) {
-        Rol.USUARIO // Valor por defecto si el string no coincide
+    } catch (e: Exception) {
+        Rol.USUARIO
     }
 )
 
-// --- B) De Modelo a Entidad (Al guardar en la DB) ---
+// Conversión Modelo -> Entidad
 fun Usuario.toEntity() = UsuarioEntity(
     id = id,
     rut = rut,
     nombre = nombre,
     apellido = apellido,
-    // Conversión: Date a Long
-    fechaNacimiento = fechaNacimiento.time,
+    fechaNacimiento = fechaNacimiento.time, // Date a Long
+    username = username,
     email = email,
     password = password,
     telefono = telefono,
-    // Conversión: Date a Long
-    fechaRegistro = fechaRegistro.time,
-    // Conversión: Enum a String
+    fechaRegistro = fechaRegistro.time, // Date a Long
     rol = rol.name
 )

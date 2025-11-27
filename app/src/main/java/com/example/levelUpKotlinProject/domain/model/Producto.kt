@@ -5,7 +5,6 @@ package com.example.levelUpKotlinProject.domain.model
  * Versión extendida con todos los campos del e-commerce
  * NO tiene anotaciones de Room (eso es en ProductoEntity)
  * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 data class Producto(
     val id: Int = 0,

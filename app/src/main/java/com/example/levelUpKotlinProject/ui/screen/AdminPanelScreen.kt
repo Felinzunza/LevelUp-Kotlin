@@ -14,9 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 import com.example.levelUpKotlinProject.domain.model.Orden
 import com.example.levelUpKotlinProject.domain.model.Producto
+import com.example.levelUpKotlinProject.domain.model.Usuario
 
 /**
  * AdminPanelScreen: Panel principal de administración con módulos de Productos y Órdenes.
@@ -25,8 +25,13 @@ import com.example.levelUpKotlinProject.domain.model.Producto
 @Composable
 fun AdminPanelScreen(
     //listas necesarias para el panel de administración
+    usuarios: List<Usuario>,
     productos: List<Producto>,
     ordenes: List<Orden>,
+
+    onAgregarUsuario: () -> Unit,
+    onEditarUsuario: (Usuario) -> Unit,
+    onEliminarUsuario: (Usuario) -> Unit,
 
     usernameAdmin: String,
     onAgregarProducto: () -> Unit,
@@ -35,9 +40,12 @@ fun AdminPanelScreen(
     onCerrarSesion: () -> Unit,
 
     onVerDetalleOrden: (Long) -> Unit,
-    onCambiarEstadoOrden: (ordenId: Long, nuevoEstado: String) -> Unit
+    onCambiarEstadoOrden: (ordenId: Long, nuevoEstado: String) -> Unit,
 ) {
-    var mostrarDialogoEliminar by remember { mutableStateOf<Producto?>(null) }
+
+    var mostrarDialogoEliminarUsuario by remember { mutableStateOf<Usuario?>(null) }
+
+    var mostrarDialogoEliminarProducto by remember { mutableStateOf<Producto?>(null) }
     // 0=Productos, 1=Órdenes, 2=Estadísticas
     var pestanaSeleccionada by remember { mutableStateOf(0) }
 
@@ -68,7 +76,22 @@ fun AdminPanelScreen(
             )
         },
         floatingActionButton = {
-            if (pestanaSeleccionada == 0) {
+
+            if(pestanaSeleccionada == 0){
+                FloatingActionButton(
+                    onClick = onAgregarUsuario,
+                    containerColor = MaterialTheme.colorScheme.secondary
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Agregar Usuario"
+                    )
+                }
+
+            }
+
+
+            if (pestanaSeleccionada == 1) {
                 FloatingActionButton(
                     onClick = onAgregarProducto,
                     containerColor = MaterialTheme.colorScheme.secondary
@@ -85,34 +108,77 @@ fun AdminPanelScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+
         ) {
             // Pestañas
             TabRow(selectedTabIndex = pestanaSeleccionada) {
+
                 Tab(
                     selected = pestanaSeleccionada == 0,
                     onClick = { pestanaSeleccionada = 0 },
+                    text = { Text("Usuarios") },
+                    icon = { Icon(Icons.Filled.Face, null) }
+                )
+
+
+                Tab(
+                    selected = pestanaSeleccionada == 1,
+                    onClick = { pestanaSeleccionada = 1 },
                     text = { Text("Productos") },
                     icon = { Icon(Icons.Filled.ShoppingCart, null) }
                 )
                 // PESTAÑA: ÓRDENES (Índice 1)
                 Tab(
-                    selected = pestanaSeleccionada == 1,
-                    onClick = { pestanaSeleccionada = 1 },
+                    selected = pestanaSeleccionada == 2,
+                    onClick = { pestanaSeleccionada = 2 },
                     text = { Text("Órdenes") },
                     icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }
                 )
                 // Pestaña de Estadísticas (Índice 2)
                 Tab(
-                    selected = pestanaSeleccionada == 2,
-                    onClick = { pestanaSeleccionada = 2 },
+                    selected = pestanaSeleccionada == 3,
+                    onClick = { pestanaSeleccionada = 3 },
                     text = { Text("Estadísticas") },
                     icon = { Icon(Icons.Filled.Info, null) }
                 )
+
+
             }
 
             // Contenido según pestaña
             when (pestanaSeleccionada) {
                 0 -> {
+                    // Contenido: Lista de Usuarios
+                    if(usuarios.isEmpty()){
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("No hay usuarios registrados", fontSize = 18.sp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = onAgregarUsuario) {
+                                    Text("Agregar Primero")
+                                }
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(usuarios, key = { it.id }) { usuario ->
+                                AdminUsuarioCard(
+                                    usuario = usuario,
+                                    onEditar = { onEditarUsuario(usuario) },
+                                    onEliminar = { mostrarDialogoEliminarUsuario = usuario }
+                                )
+                            }
+                        }
+                    }
+                }
+                1 -> {
                     // Lista de productos
                     if (productos.isEmpty()) {
                         Box(
@@ -137,21 +203,21 @@ fun AdminPanelScreen(
                                 AdminProductoCard(
                                     producto = producto,
                                     onEditar = { onEditarProducto(producto) },
-                                    onEliminar = { mostrarDialogoEliminar = producto }
+                                    onEliminar = { mostrarDialogoEliminarProducto = producto }
                                 )
                             }
                         }
                     }
                 }
                 // MÓDULO DE ÓRDENES
-                1 -> {
+                2 -> {
                     OrdenesPanelContent(
                         ordenes = ordenes,
                         onVerDetalle = onVerDetalleOrden,
                         onCambiarEstadoOrden = onCambiarEstadoOrden
                     )
                 }
-                2 -> {
+                3 -> {
                     // Estadísticas
                     EstadisticasPanel(productos, ordenes)
                 }
@@ -159,24 +225,48 @@ fun AdminPanelScreen(
         }
     }
 
-    // Diálogo de confirmación de eliminación
-    if (mostrarDialogoEliminar != null) {
+    if (mostrarDialogoEliminarUsuario != null) {
         AlertDialog(
-            onDismissRequest = { mostrarDialogoEliminar = null },
-            title = { Text("Confirmar Eliminación") },
-            text = { Text("¿Eliminar '${mostrarDialogoEliminar!!.nombre}'?") },
+            onDismissRequest = { mostrarDialogoEliminarUsuario = null },
+            title = { Text("Confirmar Eliminación de Usuario") },
+            text = { Text("¿Eliminar a '${mostrarDialogoEliminarUsuario!!.nombre} ${mostrarDialogoEliminarUsuario!!.apellido}' (RUT: ${mostrarDialogoEliminarUsuario!!.rut})?") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onEliminarProducto(mostrarDialogoEliminar!!)
-                        mostrarDialogoEliminar = null
+                        onEliminarUsuario(mostrarDialogoEliminarUsuario!!)
+                        mostrarDialogoEliminarUsuario = null
                     }
                 ) {
                     Text("Eliminar", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoEliminar = null }) {
+                TextButton(onClick = { mostrarDialogoEliminarUsuario = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+
+    // Diálogo de confirmación de eliminación
+    if (mostrarDialogoEliminarProducto != null) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoEliminarProducto = null },
+            title = { Text("Confirmar Eliminación") },
+            text = { Text("¿Eliminar '${mostrarDialogoEliminarProducto!!.nombre}'?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onEliminarProducto(mostrarDialogoEliminarProducto!!)
+                        mostrarDialogoEliminarProducto = null
+                    }
+                ) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoEliminarProducto = null }) {
                     Text("Cancelar")
                 }
             }
@@ -248,6 +338,71 @@ fun AdminProductoCard(
 }
 
 // --- NUEVO COMPONENTE: ORDENES PANEL CONTENT ---
+
+
+@Composable
+fun AdminUsuarioCard(
+    usuario: Usuario,
+    onEditar: () -> Unit,
+    onEliminar: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                // Nombre completo
+                Text(
+                    text = "${usuario.nombre} ${usuario.apellido}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // Email
+                Text(
+                    text = usuario.email,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+
+                // Rol y RUT
+                Text(
+                    text = "Rol: ${usuario.rol.name} | RUT: ${usuario.rut}",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+
+            // Botones de acción
+            Row {
+                IconButton(onClick = onEditar) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Editar Usuario",
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                }
+                IconButton(onClick = onEliminar) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Eliminar Usuario",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun OrdenesPanelContent(
@@ -426,3 +581,4 @@ fun EstadisticaCard(
         }
     }
 }
+

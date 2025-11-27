@@ -12,16 +12,33 @@ import com.example.levelUpKotlinProject.ui.state.RegistroUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * RegistroViewModel: Gestiona el formulario de registro
- * * Autor: Prof. Sting Adams Parra Silva
  */
 class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : ViewModel() { // MODIFICADO
 
     private val _uiState = MutableStateFlow(RegistroUiState())
     val uiState: StateFlow<RegistroUiState> = _uiState.asStateFlow()
+
+    init {
+        // 🛑 CAMBIO IMPORTANTE: Escuchar cambios en tiempo real (Flow)
+        cargarUsuariosEnTiempoReal()
+    }
+
+    private fun cargarUsuariosEnTiempoReal() {
+        viewModelScope.launch {
+            // Al usar collect, cada vez que la tabla cambie (por el Inicializador o por agregar),
+            // esta lista se actualiza automáticamente.
+            usuarioRepository.obtenerUsuarios().collect { listaUsuarios ->
+                _uiState.update { currentState ->
+                    currentState.copy(usuarios = listaUsuarios)
+                }
+            }
+        }
+    }
 
     /**
      * Actualiza el nombre completo y valida
@@ -143,7 +160,24 @@ class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : View
     /**
      * Intenta registrar al usuario (LÓGICA REAL IMPLEMENTADA Y CONSTRUCTOR CORREGIDO)
      */
-    fun registrar(onExito: () -> Unit) {
+
+    /**
+     * Registers a new user and executes a callback upon success.
+     */
+    fun agregarUsuario(usuario: Usuario, onSuccess: () -> Unit) {
+        _uiState.value = _uiState.value.copy(estaGuardando = true)
+        viewModelScope.launch {
+            try {
+                usuarioRepository.insertarUsuario(usuario)
+                _uiState.value = _uiState.value.copy(estaGuardando = false, registroExitoso = true)
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(estaGuardando = false)
+                // Handle error (e.g., show a message)
+            }
+        }
+    }
+    /*fun agregarUsuario(onExito: () -> Unit) {
         if (esFormularioValido()) {
             _uiState.value = _uiState.value.copy(estaGuardando = true)
 
@@ -173,6 +207,19 @@ class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : View
                     onExito()
                 }
             }
+        }
+
+    }*/
+
+    fun actualizarUsuario(usuario: Usuario) {
+        viewModelScope.launch {
+            usuarioRepository.actualizarUsuario(usuario)
+        }
+    }
+
+    fun eliminarUsuario(usuario: Usuario) {
+        viewModelScope.launch {
+            usuarioRepository.eliminarUsuario(usuario)
         }
     }
 }

@@ -2,6 +2,7 @@ package com.example.levelUpKotlinProject.ui.state
 
 import com.example.levelUpKotlinProject.domain.model.ErroresFormulario
 import com.example.levelUpKotlinProject.domain.model.FormularioRegUsuario
+import com.example.levelUpKotlinProject.domain.model.Usuario
 
 /**
  * Estado de la UI de registro
@@ -10,6 +11,9 @@ import com.example.levelUpKotlinProject.domain.model.FormularioRegUsuario
  * Autor: Prof. Sting Adams Parra Silva
  */
 data class RegistroUiState(
+    //cambio
+    val usuarios: List<Usuario> = emptyList(),
+
     val formulario: FormularioRegUsuario = FormularioRegUsuario(),
     val errores: ErroresFormulario = ErroresFormulario(),
     val estaGuardando: Boolean = false,

@@ -6,6 +6,7 @@ import com.example.levelUpKotlinProject.data.local.entity.DetalleOrdenEntity
 import com.example.levelUpKotlinProject.data.local.entity.OrdenEntity
 import com.example.levelUpKotlinProject.data.local.relations.OrdenConDetalles
 import com.example.levelUpKotlinProject.data.local.dao.CarritoDao
+import com.example.levelUpKotlinProject.domain.model.ItemOrden
 
 
 class OrdenRepository(private val ordenDao: OrdenDao, private val carritoDao: CarritoDao) {
@@ -22,6 +23,10 @@ class OrdenRepository(private val ordenDao: OrdenDao, private val carritoDao: Ca
         return ordenDao.obtenerTodasLasOrdenes()
     }
 
+    fun obtenerOrdenPorId(ordenId: Long): Flow<OrdenConDetalles?> {
+        return ordenDao.obtenerOrdenPorId(ordenId)
+    }
+
     fun obtenerOrdenesXUsuario(rutCliente: String): Flow<List<OrdenConDetalles>> {
         return ordenDao.obtenerOrdenesXUsuario(rutCliente)
     }
@@ -30,6 +35,8 @@ class OrdenRepository(private val ordenDao: OrdenDao, private val carritoDao: Ca
         ordenDao.actualizarEstado(ordenId, nuevoEstado)
 
     }
+
+
 
     suspend fun finalizarCompraTransaccional(
         orden: OrdenEntity,
@@ -49,6 +56,10 @@ class OrdenRepository(private val ordenDao: OrdenDao, private val carritoDao: Ca
 
         // 4. Limpiar el carrito
         carritoDao.vaciar()
+    }
+
+    suspend fun obtenerItemsOrden(ordenId: Long): List<ItemOrden> {
+        return ordenDao.obtenerItemsOrden(ordenId)
     }
 
 }

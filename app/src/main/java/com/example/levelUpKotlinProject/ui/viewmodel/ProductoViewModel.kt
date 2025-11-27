@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
-/**
+/*
  * ProductoViewModel: Gestiona el estado de los productos
  * 
  * ¿Qué hace?

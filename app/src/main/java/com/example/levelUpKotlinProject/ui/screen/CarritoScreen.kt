@@ -35,6 +35,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
+import com.example.levelUpKotlinProject.data.local.PreferenciasManager
 
 // --- PANTALLA PRINCIPAL: CarritoScreen (Ahora maneja Checkout) ---
 
@@ -46,7 +47,9 @@ fun CarritoScreen(
     viewModel: CarritoViewModel, // Inyectado para la lógica de compra
     carritoRepository: CarritoRepository,
     onVolverClick: () -> Unit,
-    onProductoClick: (Int) -> Unit
+    onProductoClick: (Int) -> Unit,
+    preferenciasManager: PreferenciasManager,
+    onIrALogin: () -> Unit
 ) {
     // 1. LÓGICA REACTIVA EXISTENTE DEL CARRITO
     val itemsCarrito by carritoRepository.obtenerCarrito().collectAsState(initial = emptyList())
@@ -120,7 +123,10 @@ fun CarritoScreen(
                             courier = courierState.value,
                             subtotal = subtotal,
                             costoEnvio = costoEnvio,
-                            totalPagar = totalPagar
+                            totalPagar = totalPagar,
+                            preferenciasManager = preferenciasManager,
+                            onIrALogin = onIrALogin
+
                         )
                     }
                 }
@@ -406,19 +412,31 @@ fun BotonFinalizarCompra(
     courier: TipoCourier,
     subtotal: Double,
     costoEnvio: Double,
-    totalPagar: Double
+    totalPagar: Double,
+    // 👇 NUEVOS PARÁMETROS 👇
+    preferenciasManager: PreferenciasManager,
+    onIrALogin: () -> Unit
 ) {
     Button(
         onClick = {
+            //LÓGICA DE PROTECCIÓN: Verificar sesión
+            if (!preferenciasManager.estaUsuarioLogueado()) {
+                // Si es invitado, lo mandamos al login y detenemos la compra
+                onIrALogin()
+                return@Button
+            }
+
+            // 2. Validaciones normales (Solo si está logueado)
             if (direccion.isBlank()) {
                 println("Error: La dirección no puede estar vacía.")
                 return@Button
             }
 
+            // 3. Ejecutar compra
             coroutineScope.launch {
                 try {
                     viewModel.finalizarCompra(
-                        rutCliente = rutCliente,
+                        rutCliente = rutCliente, // Aquí podrías usar el email del usuario real si quisieras
                         direccionEnvio = direccion,
                         metodoPago = metodoPago,
                         courier = courier,
@@ -436,6 +454,13 @@ fun BotonFinalizarCompra(
         },
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text("PAGAR Y CONFIRMAR ORDEN (${totalPagar.toInt()} CLP)")
+        // Cambio visual del texto del botón
+        val texto = if (preferenciasManager.estaUsuarioLogueado())
+            "PAGAR Y CONFIRMAR ORDEN (${totalPagar.toInt()} CLP)"
+        else
+            "INICIAR SESIÓN PARA COMPRAR"
+
+        Text(texto)
     }
 }
+

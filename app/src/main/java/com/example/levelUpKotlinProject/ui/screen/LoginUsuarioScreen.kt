@@ -15,9 +15,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.levelUpKotlinProject.data.local.PreferenciasManager
 import com.example.levelUpKotlinProject.data.repository.UsuarioRepository
 import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel
-import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModelFactory
 
 /**
  * LoginUsuarioScreen: Pantalla de inicio de sesión de usuario
@@ -26,11 +26,13 @@ import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModelFactory
 @Composable
 fun LoginUsuarioScreen(
     usuarioRepository: UsuarioRepository,
+    preferenciasManager: PreferenciasManager, // 👈 AÑADIR ESTO
     onVolverClick: () -> Unit,
     onLoginExitoso: () -> Unit
+
 ) {
     val viewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(usuarioRepository)
+        factory = LoginViewModel.LoginViewModelFactory(usuarioRepository)
     )
 
     val uiState by viewModel.uiState.collectAsState()
@@ -125,7 +127,17 @@ fun LoginUsuarioScreen(
             // Botón Iniciar Sesión
             Button(
                 onClick = {
-                    viewModel.iniciarSesion(onExito = onLoginExitoso)
+                    // Ahora recibimos el objeto 'usuario' en el callback
+                    viewModel.iniciarSesion { usuarioLogueado ->
+
+                        // Guardamos email Y NOMBRE
+                        preferenciasManager.guardarSesionUsuario(
+                            email = usuarioLogueado.email,
+                            nombre = usuarioLogueado.nombre // 👈 Aquí está la magia
+                        )
+
+                        onLoginExitoso()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = !uiState.estaCargando

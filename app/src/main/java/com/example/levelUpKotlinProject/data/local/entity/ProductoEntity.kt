@@ -7,8 +7,7 @@ import com.example.levelUpKotlinProject.domain.model.Producto
 /**
  * Entidad Room para productos
  * Se guarda en la tabla "productos"
- * 
- * Autor: Prof. Sting Adams Parra Silva
+
  */
 @Entity(tableName = "productos")
 data class ProductoEntity(

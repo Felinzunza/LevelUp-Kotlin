@@ -32,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import android.util.Log
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.data.repository.ProductoRepository
 import com.example.levelUpKotlinProject.domain.model.Producto
@@ -53,12 +54,19 @@ import com.example.levelUpKotlinProject.ui.viewmodel.ProductoViewModelFactory
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+
+    nombreUsuario: String?,
     productoRepository: ProductoRepository,
     carritoRepository: CarritoRepository,
     onProductoClick: (Int) -> Unit,
     onCarritoClick: () -> Unit,
     onRegistroClick: () -> Unit,
-    onVolverPortada: () -> Unit
+    onVolverPortada: () -> Unit,
+
+    // PARAMETROS DE LOGEO
+    estaLogueado: Boolean,
+    onCerrarSesion: () -> Unit,
+    onIniciarSesionClick: () -> Unit // Para ir al login si es invitado
 ) {
     // Crear ViewModel con Factory
     val viewModel: ProductoViewModel = viewModel(
@@ -96,7 +104,21 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Productos Disponibles") },
+                title = {
+                    Column {
+                        Text("LevelUp⚡")
+                        // Si hay nombre, lo mostramos chiquito abajo
+                        if (nombreUsuario != null) {
+                            Text(
+                                text = "Hola, $nombreUsuario",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+
+
                 navigationIcon = {
                     IconButton(onClick = onVolverPortada) {
                         Icon(
@@ -120,6 +142,22 @@ fun HomeScreen(
                             imageVector = Icons.Default.ShoppingCart,
                             contentDescription = "Carrito"
                         )
+                    }
+
+                    // 👇 BOTÓN DINÁMICO: SALIR O ENTRAR
+                    if (estaLogueado) {
+                        // Si está logueado, mostramos "Cerrar Sesión"
+                        IconButton(onClick = onCerrarSesion) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Cerrar Sesión"
+                            )
+                        }
+                    } else {
+                        // Si es invitado, mostramos texto o icono para "Iniciar Sesión"
+                        TextButton(onClick = onIniciarSesionClick) {
+                            Text("Ingresar")
+                        }
                     }
                 }
             )

@@ -17,21 +17,23 @@ import com.example.levelUpKotlinProject.data.repository.ProductoRepository
 import com.example.levelUpKotlinProject.data.repository.UsuarioRepository
 import com.example.levelUpKotlinProject.ui.screen.AdminPanelScreen
 import com.example.levelUpKotlinProject.ui.screen.CarritoScreen
+import com.example.levelUpKotlinProject.ui.screen.DetalleOrdenScreen
 import com.example.levelUpKotlinProject.ui.screen.DetalleProductoScreen
 import com.example.levelUpKotlinProject.ui.screen.FormularioProductoScreen
+import com.example.levelUpKotlinProject.ui.screen.FormularioUsuarioScreen
 import com.example.levelUpKotlinProject.ui.screen.HomeScreen
 import com.example.levelUpKotlinProject.ui.screen.LoginAdminScreen
 import com.example.levelUpKotlinProject.ui.screen.PortadaScreen
-import com.example.levelUpKotlinProject.ui.screen.RegistroScreen
 import com.example.levelUpKotlinProject.ui.screen.OpcionesAccesoScreen
 import com.example.levelUpKotlinProject.ui.screen.LoginUsuarioScreen
+import com.example.levelUpKotlinProject.ui.screen.RegistroScreen
 import com.example.levelUpKotlinProject.ui.viewmodel.CarritoViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.OrdenViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.ProductoViewModel
+import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 
 /**
  * NavGraph: Define todas las rutas de navegación de la app
- * * Autor: Prof. Sting Adams Parra Silva
  */
 @Composable
 fun NavGraph(
@@ -41,6 +43,7 @@ fun NavGraph(
     ordenRepository: OrdenRepository,
     carritoRepository: CarritoRepository,
     preferenciasManager: PreferenciasManager,
+    registroViewModel: RegistroViewModel,
     productoViewModel: ProductoViewModel,
     ordenViewModel: OrdenViewModel,
     carritoViewModel: CarritoViewModel,
@@ -86,6 +89,10 @@ fun NavGraph(
 
         // Ruta 1: Pantalla principal (Home)
         composable(route = Rutas.HOME) {
+
+            val estaLogueado = preferenciasManager.estaUsuarioLogueado()
+            val nombreUsuario = if (estaLogueado) preferenciasManager.obtenerNombreUsuario() else null
+
             HomeScreen(
                 productoRepository = productoRepository,
                 carritoRepository = carritoRepository,
@@ -103,6 +110,22 @@ fun NavGraph(
                         popUpTo(Rutas.HOME) { inclusive = true }
                     }
                 },
+
+                estaLogueado = estaLogueado,
+                nombreUsuario = nombreUsuario, // 👈 Pasamos el nombre aquí
+
+                onCerrarSesion = {
+                    // 1. Borrar datos de sesión
+                    preferenciasManager.cerrarSesionUsuario()
+
+                    // 2. Recargar el Home o ir a Portada (para refrescar la UI)
+                    navController.navigate(Rutas.PORTADA) {
+                        popUpTo(0) // Limpia toda la pila de navegación
+                    }
+                },
+                onIniciarSesionClick = {
+                    navController.navigate(Rutas.LOGIN_USER)
+                }
             )
         }
 
@@ -131,12 +154,17 @@ fun NavGraph(
                 navController = navController,
                 viewModel = carritoViewModel,
                 carritoRepository = carritoRepository,
+                preferenciasManager = preferenciasManager,
                 onVolverClick = {
                     navController.popBackStack()
                 },
                 onProductoClick = { productoId ->
                     navController.navigate("${Rutas.DETALLE}/$productoId")
+                },
+                onIrALogin = {
+                    navController.navigate(Rutas.LOGIN_USER)
                 }
+
             )
         }
 
@@ -162,6 +190,7 @@ fun NavGraph(
                 onVolverClick = {
                     navController.popBackStack()
                 },
+                preferenciasManager = preferenciasManager, // 👈 Nuevo parámetro
                 onLoginExitoso = {
                     navController.navigate(Rutas.HOME) {
                         popUpTo(Rutas.HOME) { inclusive = true }
@@ -196,30 +225,49 @@ fun NavGraph(
                 }
                 return@composable
             }
-
+            // Inyección de dependencias
+            val usuariosState by registroViewModel.uiState.collectAsState()
             val productosState by productoViewModel.uiState.collectAsState()
             val ordenesState by ordenViewModel.uiState.collectAsState()
 
             AdminPanelScreen(
+                //cambio
+                usuarios = usuariosState.usuarios,
                 productos = productosState.productos,
                 ordenes = ordenesState.ordenes,
                 usernameAdmin = preferenciasManager.obtenerUsernameAdmin() ?: "Admin",
+
+                //SECCIÓN DE USUARIOS
+                onAgregarUsuario = {
+                    navController.navigate("formulario_usuario?usuarioId=-1")
+                },
+                onEditarUsuario = { usuario ->
+                    navController.navigate(Rutas.formularioEditarUsuario(usuario.id))
+                },
+                onEliminarUsuario = { usuario ->
+                    registroViewModel.eliminarUsuario(usuario)
+                },
+
+
+                //SECCIÓN DE PRODUCTOS
                 onAgregarProducto = {
                     navController.navigate("formulario_producto?productoId=-1")
                 },
                 onEditarProducto = { producto ->
-                    navController.navigate(Rutas.formularioEditar(producto.id))
+                    navController.navigate(Rutas.formularioEditarProducto(producto.id))
                 },
                 onEliminarProducto = { producto ->
                     productoViewModel.eliminarProducto(producto)
                 },
-                onVerDetalleOrden = { ordenId ->
-                    navController.navigate("detalle_orden/$ordenId")
-                },
 
+                //SECCIÓN DE ORDENES
+                onVerDetalleOrden = { ordenId ->
+                    navController.navigate(Rutas.detalleOrden(ordenId))
+                },
                 onCambiarEstadoOrden = { ordenId, nuevoEstado ->
                     ordenViewModel.actualizarEstado(ordenId, nuevoEstado)
                 },
+
                 onCerrarSesion = {
                     preferenciasManager.cerrarSesionAdmin()
                     navController.navigate(Rutas.PORTADA) {
@@ -260,5 +308,68 @@ fun NavGraph(
                 }
             )
         }
+
+
+        // ... (Despues de la Ruta 7: Formulario Producto)
+
+// Ruta 8: Formulario Usuario (agregar o editar)
+        composable(
+            route = Rutas.FORMULARIO_USUARIO, // Asumiremos que es "formulario_usuario?usuarioId={usuarioId}"
+            arguments = listOf(
+                navArgument("usuarioId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) { backStackEntry ->
+            val usuarioId = backStackEntry.arguments?.getInt("usuarioId") ?: -1
+
+            // Recoge la lista de usuarios del ViewModel
+            val usuarios by registroViewModel.uiState.collectAsState()
+
+            // Lógica para encontrar el usuario a editar (si existe)
+            val usuarioEditar = if (usuarioId != -1) {
+                usuarios.usuarios.find { it.id == usuarioId }
+            } else null
+
+            val onRegistroExitoso: () -> Unit
+
+            FormularioUsuarioScreen(
+                usuarioExistente = usuarioEditar,
+                onGuardar = { usuario ->
+                    if (usuario.id == 0) {
+                        // CASO AGREGAR: Ahora requiere el bloque { } al final (el onSuccess)
+                        registroViewModel.agregarUsuario(usuario) {
+                            // Esto se ejecuta cuando la base de datos termina
+                            navController.popBackStack()
+                        }
+                    } else {
+                        // CASO ACTUALIZAR: Sigue igual (asumiendo que no cambiaste esa función)
+                        registroViewModel.actualizarUsuario(usuario)
+                        navController.popBackStack()
+                    }
+                },
+                onCancelar = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = Rutas.DETALLE_ORDEN,
+            arguments = listOf(navArgument("ordenId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val ordenId = backStackEntry.arguments?.getLong("ordenId") ?: -1L
+
+            DetalleOrdenScreen(
+                ordenId = ordenId,
+                viewModel = ordenViewModel, // Pasamos el ViewModel compartido
+                onVolverClick = { navController.popBackStack() }
+            )
+        }
+
+
+
+
     }
 }

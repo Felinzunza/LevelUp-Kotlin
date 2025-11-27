@@ -8,6 +8,7 @@ import androidx.room.Transaction
 import com.example.levelUpKotlinProject.data.local.entity.DetalleOrdenEntity
 import com.example.levelUpKotlinProject.data.local.entity.OrdenEntity
 import com.example.levelUpKotlinProject.data.local.relations.OrdenConDetalles
+import com.example.levelUpKotlinProject.domain.model.ItemOrden
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -48,6 +49,10 @@ interface OrdenDao {
     fun obtenerOrdenesXUsuario(rutCliente: String): Flow<List<OrdenConDetalles>> // Retorno ya estaba correcto
 
 
+    @Query("SELECT * FROM ordenes WHERE id = :ordenId")
+    fun obtenerOrdenPorId(ordenId: Long): Flow<OrdenConDetalles?>
+
+
     // --- 3. ACTUALIZACIÓN (Cambio de estado) ---
 
     /**
@@ -55,4 +60,19 @@ interface OrdenDao {
      */
     @Query("UPDATE ordenes SET estado = :nuevoEstado WHERE id = :ordenId")
     suspend fun actualizarEstado(ordenId: Long, nuevoEstado: String)
+
+    // Usamos 'AS' para que Room sepa mapear la columna SQL a la variable de Kotlin
+    @Query("""SELECT productoId,
+                    ordenId,
+                    nombre,
+                    imagenUrl,
+                    precio AS precioUnitarioFijo,  
+                    cantidad
+                FROM detalle_orden 
+        WHERE ordenId = :ordenId
+    """)
+    suspend fun obtenerItemsOrden(ordenId: Long): List<ItemOrden>
 }
+
+
+
