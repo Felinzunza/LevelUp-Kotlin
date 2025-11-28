@@ -16,26 +16,26 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.levelUpKotlinProject.data.repository.UsuarioRepository // AÑADIDO
+import com.example.levelUpKotlinProject.data.repository.UsuarioRepository
 import com.example.levelUpKotlinProject.domain.model.Rol
 import com.example.levelUpKotlinProject.domain.model.Usuario
+import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModelFactory
 import java.util.Date
 
 /**
  * RegistroScreen: Formulario de registro de usuario
- * * Autor: Prof. Sting Adams Parra Silva
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroScreen(
-    usuarioRepository: UsuarioRepository, // AÑADIDO: Recibir repositorio
+    usuarioRepository: UsuarioRepository,
     onVolverClick: () -> Unit,
     onRegistroExitoso: () -> Unit
 ) {
     val viewModel: RegistroViewModel = viewModel(
-        factory = RegistroViewModelFactory(usuarioRepository) // MODIFICADO: Pasar repositorio
+        factory = RegistroViewModelFactory(usuarioRepository)
     )
 
     val uiState by viewModel.uiState.collectAsState()
@@ -69,6 +69,14 @@ fun RegistroScreen(
                 text = "Completa tus datos",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
+            )
+
+            // 1. CAMPO RUT (Manual)
+            OutlinedTextField(
+                value = uiState.formulario.rut,
+                onValueChange = { viewModel.onRutChange(it) },
+                label = { Text("RUT (ej: 12345678-9) *") },
+                modifier = Modifier.fillMaxWidth()
             )
 
             // Campo: Nombre Completo
@@ -115,11 +123,25 @@ fun RegistroScreen(
                 }
             )
 
-            // Campo: Dirección
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Selector Región/Comuna
+            SelectorRegionComuna(
+                regionSeleccionada = uiState.formulario.region,
+                comunaSeleccionada = uiState.formulario.comuna,
+                onRegionChange = { nuevaRegion ->
+                    viewModel.onRegionChange(nuevaRegion)
+                },
+                onComunaChange = { nuevaComuna ->
+                    viewModel.onComunaChange(nuevaComuna)
+                }
+            )
+
+            // Campo: Dirección (Calle)
             OutlinedTextField(
                 value = uiState.formulario.direccion,
                 onValueChange = { viewModel.onDireccionChange(it) },
-                label = { Text("Dirección") },
+                label = { Text("Dirección (Calle y Número)") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = uiState.errores.direccionError != null,
                 supportingText = {
@@ -200,7 +222,6 @@ fun RegistroScreen(
                 )
             }
 
-            // Mensaje de error para términos
             uiState.errores.terminosError?.let {
                 Text(
                     text = it,
@@ -214,30 +235,32 @@ fun RegistroScreen(
             // Botón Registrarse
             Button(
                 onClick = {
-                    // 1. Primero validamos que el formulario esté correcto
+                    // Validamos formulario
                     if (viewModel.esFormularioValido()) {
-
-                        // 2. Creamos el objeto Usuario con los datos del formulario (uiState)
-                        // Generamos un RUT temporal para evitar el crash por duplicados
-                        val rutTemporal = "RUT-${System.currentTimeMillis().toString().takeLast(6)}"
 
                         val nuevoUsuario = Usuario(
                             id = 0,
-                            rut = rutTemporal,
-                            nombre = uiState.formulario.nombreCompleto, // Usamos el nombre del formulario
-                            apellido = "", // Puedes separar el apellido si quieres
+                            // ✅ CORRECCIÓN: Usamos el RUT escrito por el usuario
+                            rut = uiState.formulario.rut,
+
+                            nombre = uiState.formulario.nombreCompleto,
+                            apellido = "", // (Opcional: podrías separar el nombre)
                             username = uiState.formulario.email.split("@")[0],
                             email = uiState.formulario.email,
                             password = uiState.formulario.password,
                             telefono = uiState.formulario.telefono,
                             fechaNacimiento = Date(),
+
+                            // ✅ DATOS GEOGRÁFICOS
+                            region = uiState.formulario.region,
+                            comuna = uiState.formulario.comuna,
+                            direccion = uiState.formulario.direccion,
+
                             fechaRegistro = Date(),
                             rol = Rol.USUARIO
                         )
 
-                        // 3. Llamamos a la función pasando AMBOS parámetros:
-                        //    - El usuario creado
-                        //    - La función a ejecutar al terminar (onSuccess)
+                        // Guardamos y navegamos
                         viewModel.agregarUsuario(
                             usuario = nuevoUsuario,
                             onSuccess = {

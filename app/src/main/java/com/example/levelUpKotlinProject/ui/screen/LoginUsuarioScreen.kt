@@ -133,7 +133,8 @@ fun LoginUsuarioScreen(
                         // Guardamos email Y NOMBRE
                         preferenciasManager.guardarSesionUsuario(
                             email = usuarioLogueado.email,
-                            nombre = usuarioLogueado.nombre // 👈 Aquí está la magia
+                            nombre = usuarioLogueado.nombre,// 👈 Aquí está la magia
+                            rut = usuarioLogueado.rut
                         )
 
                         onLoginExitoso()

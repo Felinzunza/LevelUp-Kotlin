@@ -24,6 +24,9 @@ data class Usuario(
     val email: String,
     val password: String,
     val telefono: String?,
+    val direccion: String,
+    val comuna: String,
+    val region: String,
     val fechaRegistro: Date,
     val rol: Rol = Rol.USUARIO
 )

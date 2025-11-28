@@ -40,6 +40,19 @@ class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : View
         }
     }
 
+    // Función para actualizar RUT
+    fun onRutChange(nuevoRut: String) {
+        _uiState.value = _uiState.value.copy(
+            formulario = _uiState.value.formulario.copy(rut = nuevoRut)
+        )
+    }
+
+
+
+
+
+
+
     /**
      * Actualiza el nombre completo y valida
      */
@@ -79,15 +92,30 @@ class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : View
         )
     }
 
+    fun onRegionChange(nuevaRegion: String) {
+        _uiState.value = _uiState.value.copy(
+            formulario = _uiState.value.formulario.copy(
+                region = nuevaRegion,
+                comuna = "" // 🧹 ¡LIMPIEZA AUTOMÁTICA!
+            )
+        )
+    }
+
+    fun onComunaChange(nuevaComuna: String) {
+        _uiState.value = _uiState.value.copy(
+            formulario = _uiState.value.formulario.copy(comuna = nuevaComuna)
+        )
+    }
+
     /**
      * Actualiza la dirección y valida longitud mínima
      */
-    fun onDireccionChange(direccion: String) {
+    fun onDireccionChange(nuevaDireccion: String) {
         val errores = _uiState.value.errores.copy(
-            direccionError = ValidadorFormulario.validarDireccion(direccion)
+            direccionError = ValidadorFormulario.validarDireccion(nuevaDireccion)
         )
         _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(direccion = direccion),
+            formulario = _uiState.value.formulario.copy(direccion = nuevaDireccion),
             errores = errores
         )
     }
@@ -144,6 +172,8 @@ class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : View
         return form.nombreCompleto.isNotBlank() &&
                 form.email.isNotBlank() &&
                 form.telefono.isNotBlank() &&
+                form.region.isNotBlank() &&
+                form.comuna.isNotBlank() &&
                 form.direccion.isNotBlank() &&
                 form.password.isNotBlank() &&
                 form.confirmarPassword.isNotBlank() &&
@@ -222,6 +252,8 @@ class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : View
             usuarioRepository.eliminarUsuario(usuario)
         }
     }
+
+
 }
 
 /**

@@ -18,6 +18,9 @@ data class UsuarioEntity(
     val email: String,
     val password: String,
     val telefono: String?,
+    val direccion: String,
+    val comuna: String,
+    val region: String,
     val fechaRegistro: Long, // Room guarda Long
     val rol: String = "USUARIO", // Room guarda String
 )
@@ -33,6 +36,9 @@ fun UsuarioEntity.toUsuario() = Usuario(
     email = email,
     password = password,
     telefono = telefono,
+    direccion=direccion,
+    comuna=comuna,
+    region=region,
     fechaRegistro = Date(fechaRegistro), // Long a Date
     rol = try {
         Rol.valueOf(rol)
@@ -52,6 +58,9 @@ fun Usuario.toEntity() = UsuarioEntity(
     email = email,
     password = password,
     telefono = telefono,
+    direccion=direccion,
+    comuna=comuna,
+    region=region,
     fechaRegistro = fechaRegistro.time, // Date a Long
     rol = rol.name
 )

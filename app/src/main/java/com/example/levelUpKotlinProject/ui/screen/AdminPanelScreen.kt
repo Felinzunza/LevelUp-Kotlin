@@ -107,7 +107,8 @@ fun AdminPanelScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+
 
         ) {
             // Pestañas
@@ -116,30 +117,30 @@ fun AdminPanelScreen(
                 Tab(
                     selected = pestanaSeleccionada == 0,
                     onClick = { pestanaSeleccionada = 0 },
-                    text = { Text("Usuarios") },
-                    icon = { Icon(Icons.Filled.Face, null) }
+                    text = { Text("Usuarios", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary) },
+                    icon = { Icon(Icons.Filled.Face, null, tint = MaterialTheme.colorScheme.secondary)},
                 )
 
 
                 Tab(
                     selected = pestanaSeleccionada == 1,
                     onClick = { pestanaSeleccionada = 1 },
-                    text = { Text("Productos") },
-                    icon = { Icon(Icons.Filled.ShoppingCart, null) }
+                    text = { Text("Productos", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary) },
+                    icon = { Icon(Icons.Filled.ShoppingCart, null, tint = MaterialTheme.colorScheme.secondary) }
                 )
                 // PESTAÑA: ÓRDENES (Índice 1)
                 Tab(
                     selected = pestanaSeleccionada == 2,
                     onClick = { pestanaSeleccionada = 2 },
-                    text = { Text("Órdenes") },
-                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }
+                    text = { Text("Órdenes", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary) },
+                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) }
                 )
                 // Pestaña de Estadísticas (Índice 2)
                 Tab(
                     selected = pestanaSeleccionada == 3,
                     onClick = { pestanaSeleccionada = 3 },
-                    text = { Text("Estadísticas") },
-                    icon = { Icon(Icons.Filled.Info, null) }
+                    text = { Text("Estadísticas", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary) },
+                    icon = { Icon(Icons.Filled.Info, null, tint = MaterialTheme.colorScheme.secondary) }
                 )
 
 
@@ -531,12 +532,7 @@ fun EstadisticasPanel(productos: List<Producto>, ordenes: List<Orden>) {
             icono = Icons.Filled.Star
         )
 
-        // Categorías
-        EstadisticaCard(
-            titulo = "Categorías",
-            valor = productos.map { it.categoria }.distinct().size.toString(),
-            icono = Icons.Filled.Info
-        )
+
     }
 }
 

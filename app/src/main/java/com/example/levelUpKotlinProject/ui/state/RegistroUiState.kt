@@ -8,7 +8,6 @@ import com.example.levelUpKotlinProject.domain.model.Usuario
  * Estado de la UI de registro
  * Incluye el formulario actual y los errores de validación
  * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 data class RegistroUiState(
     //cambio

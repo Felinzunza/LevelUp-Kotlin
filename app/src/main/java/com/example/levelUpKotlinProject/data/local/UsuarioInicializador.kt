@@ -45,6 +45,9 @@ object UsuarioInicializador {
                     email = ADMIN_EMAIL_POR_DEFECTO,
                     password = ADMIN_PASS_POR_DEFECTO,
                     telefono = null,
+                    direccion = "Casa matriz",
+                    comuna = "Santiago",
+                    region = "Metropolitana",
                     fechaRegistro = Date(),
                     rol = Rol.ADMIN
                 )
@@ -67,6 +70,10 @@ private fun Usuario.toEntity() = UsuarioEntity(
     email = email,
     password = password,
     telefono = telefono,
+    direccion=direccion,
+    comuna=comuna,
+    region=region,
     fechaRegistro = this.fechaRegistro.time, // Convertir a Timestamp
     rol = rol.name // Convertir Enum a String
 )
+

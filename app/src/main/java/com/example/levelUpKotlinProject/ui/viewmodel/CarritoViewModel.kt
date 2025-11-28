@@ -125,6 +125,7 @@ class CarritoViewModel(application: Application,
 
     suspend fun finalizarCompra(
         rutCliente: String,
+        nombreCliente: String,
         direccionEnvio: String,
         metodoPago: TipoCompra,
         courier: TipoCourier,
@@ -144,6 +145,7 @@ class CarritoViewModel(application: Application,
             // 2. CREAR LA CABECERA (OrdenEntity) - Ahora las variables son visibles
             val ordenCabecera = OrdenEntity(
                 rutCliente = rutCliente, // ✅ Visible (es un parámetro)
+                nombreCliente = nombreCliente, // ✅ Visible (es un parámetro)
                 fechaCreacion = Date().time,
                 direccion = direccionEnvio, // ✅ Visible (es un parámetro)
                 tipoCourier = courier.name,

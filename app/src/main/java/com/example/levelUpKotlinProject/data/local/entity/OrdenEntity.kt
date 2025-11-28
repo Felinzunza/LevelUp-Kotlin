@@ -16,6 +16,7 @@ data class OrdenEntity(
 
     // DATOS DEL CLIENTE
     val rutCliente: String,
+    val nombreCliente: String, //
 
     // TIEMPO Y LOGÍSTICA
     val fechaCreacion: Long,
@@ -34,6 +35,7 @@ data class OrdenEntity(
 fun OrdenEntity.toOrden() = Orden(
     id = id,
     rut = rutCliente, // 👈 Se asume que el campo 'rut' del Modelo viene de 'rutCliente' de la Entidad
+    nombreCliente = nombreCliente, //
     fechaCreacion = Date(fechaCreacion),
     direccionEnvio = direccion,
     metodoPago = TipoCompra.valueOf(tipoCompra),
@@ -50,7 +52,7 @@ fun OrdenEntity.toOrden() = Orden(
 fun Orden.toEntity() = OrdenEntity(
     id = id,
     rutCliente = rut, // 👈 Se asume que el Modelo usa 'rut' y la Entidad 'rutCliente'
-
+    nombreCliente=nombreCliente,
     // CONVERSIÓN CRÍTICA: Date a Long (timestamp)
     fechaCreacion = fechaCreacion.time,
 

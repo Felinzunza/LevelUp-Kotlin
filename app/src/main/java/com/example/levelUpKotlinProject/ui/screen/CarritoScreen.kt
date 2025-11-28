@@ -36,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import com.example.levelUpKotlinProject.data.local.PreferenciasManager
+import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
 
 // --- PANTALLA PRINCIPAL: CarritoScreen (Ahora maneja Checkout) ---
 
@@ -57,12 +58,18 @@ fun CarritoScreen(
     val scope = rememberCoroutineScope()
 
     // 2. ESTADOS DE FORMULARIO DE CHECKOUT (Se usan para el botón final)
-    val direccionState = remember { mutableStateOf("Calle Ficticia 123") }
+    var region by remember { mutableStateOf("") }
+    var comuna by remember { mutableStateOf( "") }
+    val rutUsuarioLogueado = preferenciasManager.obtenerRutUsuario()
+    val nombreUsuario = preferenciasManager.obtenerNombreUsuario() ?: "Cliente"
+    val direccionState = remember { mutableStateOf("") }
+    val direccionCompleta = "${direccionState.value}, $comuna, $region"
+    val emailUsuario = preferenciasManager.obtenerEmailUsuario() ?: "Invitado"
     val courierState = remember { mutableStateOf(TipoCourier.CORREOS_CHILE) }
     val metodoPagoState = remember { mutableStateOf(TipoCompra.TARJETA_DEBITO) }
 
     // 3. DATOS DE SESIÓN Y TOTALES (Cálculo del total final)
-    val rutCliente = "20123456-7"
+
     val subtotal = total // Asumimos que el total del carrito es el subtotal
     val costoEnvio = if (total > 0) 5.0 else 0.0 // Envío fijo si hay productos
     val totalPagar = total + costoEnvio
@@ -117,8 +124,9 @@ fun CarritoScreen(
                                     popUpTo(Rutas.HOME) { inclusive = true }
                                 }
                             },
-                            rutCliente = rutCliente,
-                            direccion = direccionState.value,
+                            rutCliente = rutUsuarioLogueado,
+                            nombreCliente = nombreUsuario, //
+                            direccion = direccionCompleta,
                             metodoPago = metodoPagoState.value,
                             courier = courierState.value,
                             subtotal = subtotal,
@@ -185,6 +193,20 @@ fun CarritoScreen(
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.height(16.dp))
+
+
+
+                    SelectorRegionComuna(
+                        regionSeleccionada = region,
+                        comunaSeleccionada = comuna,
+                        onRegionChange = { nuevaRegion ->
+                            region = nuevaRegion
+                            comuna = "" // 🧹 ¡LIMPIEZA MANUAL AQUÍ!
+                        },
+                        onComunaChange = { nuevaComuna ->
+                            comuna = nuevaComuna
+                        }
+                    )
 
                     CourierSelector(courierState.value) { courierState.value = it }
                     Spacer(modifier = Modifier.height(24.dp))
@@ -407,6 +429,7 @@ fun BotonFinalizarCompra(
     coroutineScope: CoroutineScope,
     onCompraExitosa: () -> Unit,
     rutCliente: String,
+    nombreCliente: String, //
     direccion: String,
     metodoPago: TipoCompra,
     courier: TipoCourier,
@@ -437,6 +460,7 @@ fun BotonFinalizarCompra(
                 try {
                     viewModel.finalizarCompra(
                         rutCliente = rutCliente, // Aquí podrías usar el email del usuario real si quisieras
+                        nombreCliente= nombreCliente,
                         direccionEnvio = direccion,
                         metodoPago = metodoPago,
                         courier = courier,

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import com.example.levelUpKotlinProject.domain.model.Rol
 import com.example.levelUpKotlinProject.domain.model.Usuario
+import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -50,6 +51,9 @@ fun FormularioUsuarioScreen(
     var email by remember { mutableStateOf(usuarioExistente?.email ?: "") }
     var password by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf(usuarioExistente?.telefono ?: "") }
+    var direccion by remember { mutableStateOf(usuarioExistente?.direccion ?: "") }
+    var region by remember { mutableStateOf(usuarioExistente?.region ?: "") }
+    var comuna by remember { mutableStateOf(usuarioExistente?.comuna ?: "") }
     var rol by remember { mutableStateOf(usuarioExistente?.rol ?: Rol.USUARIO) }
 
     // ESTADO DE FECHA (Objeto Date real para evitar errores de parseo)
@@ -165,7 +169,33 @@ fun FormularioUsuarioScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+
+
             OutlinedTextField(value = telefono, onValueChange = { telefono = it.filter { char -> char.isDigit() }; mensajeError = null }, label = { Text("Teléfono") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth())
+
+
+            Text("Ubicación", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            // ... UI ...
+            SelectorRegionComuna(
+                regionSeleccionada = region,
+                comunaSeleccionada = comuna,
+                onRegionChange = { nuevaRegion ->
+                    region = nuevaRegion
+                    comuna = "" // 🧹 ¡LIMPIEZA MANUAL AQUÍ!
+                },
+                onComunaChange = { nuevaComuna ->
+                    comuna = nuevaComuna
+                }
+            )
+
+            OutlinedTextField(
+                value = direccion,
+                onValueChange = { direccion = it },
+                label = { Text("Dirección (Calle y N°)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+
 
             // ROL DROPDOWN
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -194,6 +224,9 @@ fun FormularioUsuarioScreen(
                         username.isBlank() -> mensajeError = "El Username es obligatorio"
                         fechaNacimientoSeleccionada == null -> mensajeError = "Selecciona una fecha de nacimiento"
                         email.isBlank() -> mensajeError = "El Email es obligatorio"
+                        region.isBlank() -> mensajeError = "Selecciona una Región"
+                        comuna.isBlank() -> mensajeError = "Selecciona una Comuna"
+                        direccion.isBlank() -> mensajeError = "La Dirección es obligatoria"
                         !esEdicion && password.isBlank() -> mensajeError = "La contraseña es obligatoria"
                         else -> {
                             // Todo válido, creamos el objeto
@@ -204,6 +237,9 @@ fun FormularioUsuarioScreen(
                                 username = username, email = email,
                                 password = password.takeIf { it.isNotBlank() } ?: usuarioExistente?.password ?: "",
                                 telefono = telefono,
+                                direccion = direccion,
+                                comuna = comuna,
+                                region = region,
                                 fechaRegistro = usuarioExistente?.fechaRegistro ?: Date(),
                                 rol = rol
                             )

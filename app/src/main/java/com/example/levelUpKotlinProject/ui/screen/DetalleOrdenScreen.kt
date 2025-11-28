@@ -20,7 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.levelUpKotlinProject.domain.model.EstadoOrden
 import com.example.levelUpKotlinProject.domain.model.ItemOrden
+import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.OrdenViewModel
+import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +38,9 @@ fun DetalleOrdenScreen(
 
     // 2. Observar el estado del ViewModel
     val orden = viewModel.ordenSeleccionada
+
+    // ... (Resto del código) ...
+
 
     // Estados para el menú desplegable
     var menuExpandido by remember { mutableStateOf(false) }
@@ -123,6 +128,45 @@ fun DetalleOrdenScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        // 👇 DATOS DEL CLIENTE 👇
+                        Text("Datos de Envío", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+
+                        // RUT
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("RUT:", style = MaterialTheme.typography.bodyMedium)
+                            Text(orden.rut, fontWeight = FontWeight.Bold)
+                        }
+
+                        // 👇 FILA CLIENTE DIRECTA
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Cliente:", style = MaterialTheme.typography.bodyMedium)
+                            Text(orden.nombreCliente, fontWeight = FontWeight.Bold)
+                        }
+
+
+                        // Fila Dirección (Multilínea)
+                        Column {
+                            Text("Dirección:", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = orden.direccionEnvio, // Aquí se verá "Calle 123, Santiago, Metropolitana"
+                                fontWeight = FontWeight.Medium,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+
+                        // Fila Courier
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Courier:", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = orden.courierDisplay,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge
+
+                            )
+                        }
                         // Fila de Total
                         Row(
                             modifier = Modifier.fillMaxWidth(),

@@ -6,6 +6,7 @@ import java.util.Locale
 data class Orden(
     val id: Long,
     val rut: String,
+    val nombreCliente: String,
     val fechaCreacion: Date,
     val estado: EstadoOrden,
     val direccionEnvio: String,
@@ -27,6 +28,10 @@ data class Orden(
         return "$${totalEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
 
     }
+
+
+
+
     val estadoDisplay:String
         get()=estado.displayString
 
