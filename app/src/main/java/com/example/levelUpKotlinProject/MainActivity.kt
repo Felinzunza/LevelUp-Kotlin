@@ -11,6 +11,8 @@ import com.example.levelUpKotlinProject.data.local.AppDatabase
 import com.example.levelUpKotlinProject.data.local.PreferenciasManager
 import com.example.levelUpKotlinProject.data.local.ProductoInicializador
 import com.example.levelUpKotlinProject.data.local.UsuarioInicializador
+import com.example.levelUpKotlinProject.data.remote.RetrofitClient
+import com.example.levelUpKotlinProject.data.remote.api.ProductoApiService
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.data.repository.OrdenRepository
 import com.example.levelUpKotlinProject.data.repository.ProductoRepository
@@ -35,15 +37,23 @@ class MainActivity : ComponentActivity() {
             UsuarioInicializador.inicializarAdmin(applicationContext)
         }
 
-        // 3. Crear repositorios
-        val productoRepository = ProductoRepository(database.productoDao())
+        // 3. Crear instancia del servicio API
+        val apiService: ProductoApiService = RetrofitClient.crearServicio(ProductoApiService::class.java)
+
+
+        //4. Crear repositorio con API y DAO
+        val productoRepository = ProductoRepository(
+            productoDao = database.productoDao(),
+            apiService = apiService
+        )
         val ordenRepository = OrdenRepository(database.ordenDao(), database.carritoDao())
         val carritoRepository = CarritoRepository(database.carritoDao())
         val usuarioRepository = UsuarioRepository(database.usuarioDao())
 
-        // 4. Crear PreferenciasManager
+        // 5. Crear PreferenciasManager
         val preferenciasManager = PreferenciasManager(applicationContext)
 
+        //6. UI
         setContent {
             LevelUpKotlinProjectTheme {
                 Surface {
