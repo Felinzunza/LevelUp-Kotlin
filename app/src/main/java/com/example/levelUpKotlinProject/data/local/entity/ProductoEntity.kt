@@ -11,7 +11,7 @@ import com.example.levelUpKotlinProject.domain.model.Producto
  */
 @Entity(tableName = "productos")
 data class ProductoEntity(
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey(autoGenerate = false)
     val id: Int = 0,
     val nombre: String,
     val descripcion: String,

@@ -17,12 +17,12 @@ import com.example.levelUpKotlinProject.domain.model.Producto
 
 /**
  * FormularioProductoScreen: Formulario para agregar o editar productos
- * 
- * Funcionalidades:
+ * * Funcionalidades:
  * - Modo agregar (productoExistente = null)
  * - Modo editar (productoExistente != null)
  * - Validaciones de todos los campos
  * - Mensajes de error específicos
+ * - PRESERVA EL ID AL EDITAR (Corrección crítica)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,20 +34,22 @@ fun FormularioProductoScreen(
     // Estados del formulario
     var nombre by remember { mutableStateOf(productoExistente?.nombre ?: "") }
     var descripcion by remember { mutableStateOf(productoExistente?.descripcion ?: "") }
+    // Convertimos a String para el campo de texto, evitando mostrar "0" si es nuevo
     var precio by remember { mutableStateOf(productoExistente?.precio?.toInt()?.toString() ?: "") }
     var stock by remember { mutableStateOf(productoExistente?.stock?.toString() ?: "") }
     var categoria by remember { mutableStateOf(productoExistente?.categoria ?: "") }
     var imagenUrl by remember { mutableStateOf(productoExistente?.imagenUrl ?: "") }
+
     var mensajeError by remember { mutableStateOf<String?>(null) }
-    
+
     val esEdicion = productoExistente != null
     val scrollState = rememberScrollState()
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
-                    Text(if (esEdicion) "Editar Producto" else "Nuevo Producto") 
+                title = {
+                    Text(if (esEdicion) "Editar Producto" else "Nuevo Producto")
                 },
                 navigationIcon = {
                     IconButton(onClick = onCancelar) {
@@ -68,7 +70,7 @@ fun FormularioProductoScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Instrucciones
+            // Tarjeta informativa
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -83,11 +85,11 @@ fun FormularioProductoScreen(
                     )
                 }
             }
-            
+
             // Campo: Nombre
             OutlinedTextField(
                 value = nombre,
-                onValueChange = { 
+                onValueChange = {
                     nombre = it
                     mensajeError = null
                 },
@@ -95,11 +97,11 @@ fun FormularioProductoScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             // Campo: Descripción
             OutlinedTextField(
                 value = descripcion,
-                onValueChange = { 
+                onValueChange = {
                     descripcion = it
                     mensajeError = null
                 },
@@ -108,11 +110,12 @@ fun FormularioProductoScreen(
                 maxLines = 5,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             // Campo: Precio
             OutlinedTextField(
                 value = precio,
-                onValueChange = { 
+                onValueChange = {
+                    // Solo permitimos números
                     precio = it.filter { char -> char.isDigit() }
                     mensajeError = null
                 },
@@ -122,11 +125,11 @@ fun FormularioProductoScreen(
                 prefix = { Text("$") },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             // Campo: Stock
             OutlinedTextField(
                 value = stock,
-                onValueChange = { 
+                onValueChange = {
                     stock = it.filter { char -> char.isDigit() }
                     mensajeError = null
                 },
@@ -135,11 +138,11 @@ fun FormularioProductoScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             // Campo: Categoría
             OutlinedTextField(
                 value = categoria,
-                onValueChange = { 
+                onValueChange = {
                     categoria = it
                     mensajeError = null
                 },
@@ -148,11 +151,12 @@ fun FormularioProductoScreen(
                 placeholder = { Text("Ej: Periféricos, Audio, Video...") },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             // Campo: ID de imagen
             OutlinedTextField(
                 value = imagenUrl,
-                onValueChange = { 
+                onValueChange = {
+                    // Convertimos a formato snake_case automáticamente para evitar errores
                     imagenUrl = it.lowercase().replace(" ", "_")
                     mensajeError = null
                 },
@@ -167,8 +171,8 @@ fun FormularioProductoScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            
-            // Mensaje de error
+
+            // Visualización de Errores
             if (mensajeError != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -184,10 +188,10 @@ fun FormularioProductoScreen(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Botones
+
+            // Botones de Acción
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -199,7 +203,7 @@ fun FormularioProductoScreen(
                 ) {
                     Text("Cancelar")
                 }
-                
+
                 // Botón Guardar
                 Button(
                     onClick = {
@@ -211,10 +215,12 @@ fun FormularioProductoScreen(
                             descripcion.isBlank() -> {
                                 mensajeError = "La descripción es obligatoria"
                             }
-                            precio.isBlank() || precio.toIntOrNull() == null || precio.toInt() <= 0 -> {
+                            // Validar precio
+                            precio.isBlank() || (precio.toIntOrNull() ?: 0) <= 0 -> {
                                 mensajeError = "Ingresa un precio válido mayor a 0"
                             }
-                            stock.isBlank() || stock.toIntOrNull() == null || stock.toInt() < 0 -> {
+                            // Validar stock (puede ser 0)
+                            stock.isBlank() || (stock.toIntOrNull() ?: -1) < 0 -> {
                                 mensajeError = "Ingresa un stock válido (0 o más)"
                             }
                             categoria.isBlank() -> {
@@ -226,7 +232,11 @@ fun FormularioProductoScreen(
                             else -> {
                                 // Todo válido, crear o actualizar producto
                                 val producto = Producto(
+                                    // 🛑 AQUÍ ESTÁ LA SOLUCIÓN:
+                                    // Si editamos, mantenemos el ID original (ej: 105).
+                                    // Si es nuevo, usamos 0.
                                     id = productoExistente?.id ?: 0,
+
                                     nombre = nombre.trim(),
                                     descripcion = descripcion.trim(),
                                     precio = precio.toDouble(),

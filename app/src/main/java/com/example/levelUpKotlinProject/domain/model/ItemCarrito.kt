@@ -22,11 +22,8 @@ fun ItemCarrito.toDetalleEntity(ordenId: Long): DetalleOrdenEntity {
         ordenId = ordenId, // Usamos el ID temporal o 0
         productoId = this.producto.id,
         nombre = this.producto.nombre,
-        descripcion = this.producto.descripcion,
         precio = this.producto.precio,
         imagenUrl = this.producto.imagenUrl,
-        categoria = this.producto.categoria,
-        stock = this.producto.stock,
         cantidad = this.cantidad
     )
 }

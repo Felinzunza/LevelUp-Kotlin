@@ -1,0 +1,376 @@
+{
+  "products": [
+    {
+      "id": "1",
+      "title": "Mouse Gamer RGB",
+      "description": "Mouse óptico profesional.",
+      "price": 25000,
+      "image": "mouse_gamer",
+      "category": "Periféricos",
+      "stock": 15
+    },
+    {
+      "id": "2",
+      "title": "Teclado Mecánico",
+      "description": "Teclado mecánico switches azules.",
+      "price": 45000,
+      "image": "teclado_mecanico",
+      "category": "Periféricos",
+      "stock": 8
+    },
+    {
+      "id": "3",
+      "title": "Audífonos Gamer RGB",
+      "description": "Sonido envolvente 7.1 con iluminación RGB.",
+      "price": 34990,
+      "image": "audifonos_rgb",
+      "category": "Audio",
+      "stock": 20
+    },
+    {
+      "id": "4",
+      "title": "Monitor Gaming",
+      "description": "Monitor 144Hz 1ms panel IPS.",
+      "price": 189990,
+      "image": "monitor_gaming",
+      "category": "Monitores",
+      "stock": 5
+    },
+    {
+      "id": "5",
+      "title": "Mousepad XXL",
+      "description": "Superficie extendida de alta precisión.",
+      "price": 14990,
+      "image": "mousepad_xxl",
+      "category": "Accesorios",
+      "stock": 50
+    },
+    {
+      "id": "6",
+      "title": "Silla Gamer",
+      "description": "Silla ergonómica reclinable con cojines.",
+      "price": 129990,
+      "image": "silla_gamer",
+      "category": "Mobiliario",
+      "stock": 3
+    },
+    {
+      "id": "7",
+      "title": "SSD NVMe",
+      "description": "Disco estado sólido M.2 alta velocidad.",
+      "price": 55000,
+      "image": "ssd_nvme",
+      "category": "Hardware",
+      "stock": 12
+    },
+    {
+      "id": "8",
+      "title": "Webcam HD",
+      "description": "Cámara 1080p ideal para streaming.",
+      "price": 29990,
+      "image": "webcam_hd",
+      "category": "Periféricos",
+      "stock": 8
+    }
+  ],
+  "users": [
+    {
+      "id": "101",
+      "rut": "12.345.678-9",
+      "name": "Antonio",
+      "lastname": "Briones",
+      "birthday": "2001-01-01",
+      "registrationDate": "2024-01-15",
+      "username": "Tono",
+      "email": "tono12@duoc.cl",
+      "password": "Cliente1",
+      "phone": "918273645",
+      "direction": "Carrera 999",
+      "city": "Concepción",
+      "region": "Bio Bio",
+      "role": "USUARIO"
+    },
+    {
+      "id": "102",
+      "rut": "15.555.444-K",
+      "name": "Felipe",
+      "lastname": "Inzunza",
+      "birthday": "1995-05-15",
+      "registrationDate": "2024-02-20",
+      "username": "FelinAdmin",
+      "email": "felipe@levelup.cl",
+      "password": "Admin123",
+      "phone": "+56999887766",
+      "direction": "Av. Paicaví 123",
+      "city": "Concepción",
+      "region": "Bio Bio",
+      "role": "ADMIN"
+    },
+    {
+      "id": "103",
+      "rut": "18.999.000-1",
+      "name": "Valentina",
+      "lastname": "Soto",
+      "birthday": "1998-12-10",
+      "registrationDate": "2024-03-10",
+      "username": "ValeGamer",
+      "email": "vale@gmail.com",
+      "password": "User123",
+      "phone": "987654321",
+      "direction": "Los Alerces 456",
+      "city": "Talcahuano",
+      "region": "Bio Bio",
+      "role": "USUARIO"
+    },
+    {
+      "id": "104",
+      "rut": "9.111.222-3",
+      "name": "Pedro",
+      "lastname": "Pascal",
+      "birthday": "1975-04-02",
+      "registrationDate": "2024-04-01",
+      "username": "Mando",
+      "email": "mando@starwars.com",
+      "password": "Beskar123",
+      "phone": "+56911223344",
+      "direction": "Alameda 777",
+      "city": "Santiago",
+      "region": "Metropolitana",
+      "role": "USUARIO"
+    },
+    {
+      "id": "105",
+      "rut": "44.444.444-4",
+      "name": "Juan",
+      "lastname": "Bodoque",
+      "birthday": "2008-11-30",
+      "registrationDate": "2025-12-01",
+      "username": "conejorojo",
+      "email": "juan@gmail.com",
+      "password": "Cliente1",
+      "phone": "9595959595",
+      "direction": "Titirilquen 31",
+      "city": "Concepción",
+      "region": "Biobío",
+      "role": "USUARIO"
+    },
+    {
+      "id": "106",
+      "rut": "93.938.392-8",
+      "name": "Tulio",
+      "lastname": "Triviño",
+      "birthday": "2025-12-01",
+      "registrationDate": "2025-12-01",
+      "username": "tulio",
+      "email": "tulio@gmail.com",
+      "password": "Cliente1",
+      "phone": "959595959",
+      "direction": "Rio Azul 34",
+      "city": "Cochrane",
+      "region": "Aysén",
+      "role": "USUARIO"
+    },
+    {
+      "id": "107",
+      "rut": "9.876.654-8",
+      "name": "Diego",
+      "lastname": "Maradona",
+      "birthday": "2025-12-01",
+      "registrationDate": "2025-12-01",
+      "username": "d1eg0",
+      "email": "diego@gmail.com",
+      "password": "Cliente1",
+      "phone": "659892317",
+      "direction": "El Cielo 10",
+      "city": "Los Ángeles",
+      "region": "Biobío",
+      "role": "USUARIO"
+    },
+    {
+      "id": "108",
+      "lastname": "hugo",
+      "city": "Padre Las Casas",
+      "direction": "Ortiz de rosas 42",
+      "email": "mario@gmail.com",
+      "birthday": "2025-12-01",
+      "registrationDate": "2025-12-01",
+      "name": "mario",
+      "password": "Cliente1",
+      "region": "Araucanía",
+      "role": "USUARIO",
+      "rut": "84848282-8",
+      "phone": "323232323",
+      "username": "mario"
+    }
+  ],
+  "orders": [
+    {
+      "id": "1001",
+      "rut": "15.555.444-K",
+      "clientName": "Felipe Inzunza",
+      "date": "2024-11-25T14:30:00",
+      "status": "ENTREGADO",
+      "shippingAddress": "Av. Paicaví 123, Concepción",
+      "paymentMethod": "CREDITO",
+      "courier": "CHILEXPRESS",
+      "subtotal": 39990,
+      "shippingCost": 5000,
+      "discount": 0,
+      "total": 44990,
+      "items": [
+        {
+          "productId": 1,
+          "orderId": 1001,
+          "productName": "Mouse Gamer RGB",
+          "imageUrl": "mouse_gamer",
+          "price": 25000,
+          "quantity": 1
+        },
+        {
+          "productId": 5,
+          "orderId": 1001,
+          "productName": "Mousepad XXL",
+          "imageUrl": "mousepad_xxl",
+          "price": 14990,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "1002",
+      "rut": "12.345.678-9",
+      "clientName": "Antonio Briones",
+      "date": "2024-11-30T10:15:00",
+      "status": "PENDIENTE",
+      "shippingAddress": "Carrera 999, Concepción",
+      "paymentMethod": "DEBITO",
+      "courier": "STARKEN",
+      "subtotal": 45000,
+      "shippingCost": 3990,
+      "discount": 0,
+      "total": 48990,
+      "items": [
+        {
+          "productId": 2,
+          "orderId": 1002,
+          "productName": "Teclado Mecánico",
+          "imageUrl": "teclado_mecanico",
+          "price": 45000,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "1003",
+      "rut": "18.999.000-1",
+      "clientName": "Valentina Soto",
+      "date": "2024-12-01T09:00:00",
+      "status": "EN_CAMINO",
+      "shippingAddress": "Los Alerces 456, Talcahuano",
+      "paymentMethod": "TRANSFERENCIA",
+      "courier": "CORREOS_CHILE",
+      "subtotal": 129990,
+      "shippingCost": 0,
+      "discount": 10000,
+      "total": 119990,
+      "items": [
+        {
+          "productId": 6,
+          "orderId": 1003,
+          "productName": "Silla Gamer",
+          "imageUrl": "silla_gamer",
+          "price": 129990,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "1004",
+      "shippingCost": 5,
+      "courier": "CORREOS_CHILE",
+      "discount": 0,
+      "shippingAddress": ", , ",
+      "status": "EN_PREPARACION",
+      "date": "2025-12-01T18:56:31",
+      "items": [
+        {
+          "quantity": 1,
+          "imageUrl": "teclado_mecanico",
+          "productName": "Teclado Mecánico",
+          "orderId": 1004,
+          "price": 45000,
+          "productId": 2
+        },
+        {
+          "quantity": 1,
+          "imageUrl": "mouse_gamer",
+          "productName": "Mouse Gamer RGB",
+          "orderId": 1004,
+          "price": 25000,
+          "productId": 1
+        }
+      ],
+      "paymentMethod": "TARJETA_DEBITO",
+      "clientName": "Tulio",
+      "rut": "93.938.392-8",
+      "subtotal": 70000,
+      "total": 70005
+    },
+    {
+      "id": "1005",
+      "shippingCost": 5,
+      "courier": "CORREOS_CHILE",
+      "discount": 0,
+      "shippingAddress": "sargento aldea 1, , ",
+      "status": "EN_PREPARACION",
+      "date": "2025-12-01T19:07:15",
+      "items": [
+        {
+          "quantity": 2,
+          "imageUrl": "mouse_gamer",
+          "productName": "Mouse Gamer RGB",
+          "orderId": 1005,
+          "price": 25000,
+          "productId": 1
+        }
+      ],
+      "paymentMethod": "TARJETA_DEBITO",
+      "clientName": "Diego",
+      "rut": "9.876.654-8",
+      "subtotal": 50000,
+      "total": 50005
+    },
+    {
+      "id": "1006",
+      "shippingCost": 5,
+      "courier": "CORREOS_CHILE",
+      "discount": 0,
+      "shippingAddress": "las casas 31, Padre Las Casas, Araucanía",
+      "status": "EN_PREPARACION",
+      "date": "2025-12-01T19:37:47",
+      "items": [
+        {
+          "quantity": 1,
+          "imageUrl": "audifonos_rgb",
+          "productName": "Audífonos Gamer RGB",
+          "orderId": 1006,
+          "price": 34990,
+          "productId": 3
+        },
+        {
+          "quantity": 1,
+          "imageUrl": "monitor_gaming",
+          "productName": "Monitor Gaming",
+          "orderId": 1006,
+          "price": 189990,
+          "productId": 4
+        }
+      ],
+      "paymentMethod": "TARJETA_DEBITO",
+      "clientName": "mario",
+      "rut": "84848282-8",
+      "subtotal": 224980,
+      "total": 224985
+    }
+  ]
+}

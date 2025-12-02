@@ -32,6 +32,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true // <--- Agrega esto
     }
 
     kotlinOptions {
@@ -71,6 +72,8 @@ dependencies {
     // Coil para cargar imágenes
     implementation(libs.coil.compose)
 
+    // dependencia para que funcione la fecha parseada a version antigua
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
 
     // Accompanist Permissions

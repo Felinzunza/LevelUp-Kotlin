@@ -34,9 +34,8 @@ interface ProductoApiService {
 
     // POST: Crear nuevo producto
     @POST("products")
-    suspend fun agregarProducto(
-        @Body nuevoProducto: ProductoDto
-    ): Response<ProductoDto>
+    suspend fun agregarProducto(@Body producto: ProductoDto): Response<ProductoDto>
+
 
     // PUT: Actualizar producto existente
     @PUT("products/{id}")

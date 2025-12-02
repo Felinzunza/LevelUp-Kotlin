@@ -12,11 +12,8 @@ data class DetalleOrdenEntity(
     val ordenId: Long = 0,
     val productoId: Int,
     val nombre: String,
-    val descripcion: String,
     val precio: Double, // 👈 Este es el campo que contiene el precio cobrado
     val imagenUrl: String,
-    val categoria: String,
-    val stock: Int,
     val cantidad: Int = 1
 )
 

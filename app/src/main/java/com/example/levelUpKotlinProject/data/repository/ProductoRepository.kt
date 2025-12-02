@@ -10,11 +10,16 @@ import com.example.levelUpKotlinProject.domain.repository.RepositorioProductos
 import android.util.Log
 import com.example.levelUpKotlinProject.data.remote.dto.aDto
 import com.example.levelUpKotlinProject.data.remote.dto.aModelo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.UnknownHostException
-/**
+/*/**
  * Implementación del repositorio de productos con soporte para API REST y cache local
  *
  * Este repositorio implementa el patrón Repository con estrategia híbrida:
@@ -334,5 +339,114 @@ class ProductoRepository(
     override suspend fun eliminarTodosLosProductos() {
         productoDao.eliminarTodosLosProductos()
         Log.d(TAG, "✓ Todos los productos eliminados de cache local")
+    }
+}*/
+
+class ProductoRepository(
+    private val productoDao: ProductoDao,
+    private val apiService: ProductoApiService
+) {
+    companion object {
+        private const val TAG = "ProductoRepository"
+    }
+
+    // LECTURA REACTIVA
+    fun obtenerProductos(): Flow<List<Producto>> = flow {
+        // Sincronización API -> Local en segundo plano
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = apiService.obtenerTodosLosProductos()
+                if (response.isSuccessful && response.body() != null) {
+                    val productosRemotos = response.body()!!.map { it.aModelo() }
+
+                    // Insertamos usando los IDs del servidor.
+                    // Al ser OnConflictStrategy.REPLACE (por defecto en muchos daos) o manual,
+                    // esto sobrescribe lo local con la verdad del servidor.
+                    productoDao.insertarProductos(productosRemotos.map { it.toEntity() })
+
+                    Log.d(TAG, "✓ Sincronización exitosa: ${productosRemotos.size} productos")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sincronizando: ${e.message}")
+            }
+        }
+
+        // Fuente de Verdad: Base de datos Local
+        val flowLocal = productoDao.obtenerTodosLosProductos().map { list ->
+            list.map { it.toProducto() }
+        }
+        emitAll(flowLocal)
+    }
+
+    suspend fun obtenerProductoPorId(id: Int): Producto? {
+        return productoDao.obtenerProductoPorId(id)?.toProducto()
+    }
+
+    // --- CRUD ---
+
+    /**
+     *ya hice el cambio en el productapiservice y ahora le quite el id al agregarProducto
+     */
+    suspend fun insertarProducto(producto: Producto): Long {
+        return try {
+            Log.d(TAG, "Enviando producto a API...")
+            val response = apiService.agregarProducto(producto.aDto()) //le saque del parametro el id
+
+            if (response.isSuccessful && response.body() != null) {
+                // 1. Obtenemos el producto YA CREADO por el servidor (con ID real)
+                val productoCreado = response.body()!!.aModelo()
+                Log.d(TAG, "✓ Producto creado en API con ID: ${productoCreado.id}")
+
+                // 2. Guardamos en local ESE producto (con el ID del servidor)
+                productoDao.insertarProducto(productoCreado.toEntity())
+
+                productoCreado.id.toLong()
+            } else {
+                Log.e(TAG, "Error API (${response.code()}). Guardando localmente.")
+                // Fallback: Si la API falla, guardamos el local (el ID será el que traiga o 0)
+                // Nota: Esto podría causar desincronización si no se maneja cola de subida luego.
+                productoDao.insertarProducto(producto.toEntity())
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Excepción red: ${e.message}")
+            productoDao.insertarProducto(producto.toEntity())
+        }
+    }
+
+    suspend fun actualizarProducto(producto: Producto) {
+        // 1. Actualización Optimista (Local)
+        productoDao.actualizarProducto(producto.toEntity())
+
+        try {
+            Log.d(TAG, "Actualizando ID ${producto.id} en API...")
+            // Importante: producto.id debe ser el ID del servidor
+            val response = apiService.modificarProducto(producto.id, producto.aDto())
+
+            if (response.isSuccessful) {
+                Log.d(TAG, "✓ Actualizado en servidor")
+            } else {
+                Log.e(TAG, "Error API Update: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error red Update: ${e.message}")
+        }
+    }
+
+    suspend fun eliminarProducto(producto: Producto) {
+        // 1. Borrado Optimista (Local)
+        productoDao.eliminarProducto(producto.toEntity())
+
+        try {
+            Log.d(TAG, "Eliminando ID ${producto.id} en API...")
+            val response = apiService.borrarProducto(producto.id)
+
+            if (response.isSuccessful) {
+                Log.d(TAG, "✓ Eliminado en servidor")
+            } else {
+                Log.e(TAG, "Error API Delete: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error red Delete: ${e.message}")
+        }
     }
 }

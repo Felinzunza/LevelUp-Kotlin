@@ -12,7 +12,9 @@ import com.example.levelUpKotlinProject.data.local.PreferenciasManager
 import com.example.levelUpKotlinProject.data.local.ProductoInicializador
 import com.example.levelUpKotlinProject.data.local.UsuarioInicializador
 import com.example.levelUpKotlinProject.data.remote.RetrofitClient
+import com.example.levelUpKotlinProject.data.remote.api.OrdenApiService
 import com.example.levelUpKotlinProject.data.remote.api.ProductoApiService
+import com.example.levelUpKotlinProject.data.remote.api.UsuarioApiService
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.data.repository.OrdenRepository
 import com.example.levelUpKotlinProject.data.repository.ProductoRepository
@@ -35,20 +37,31 @@ class MainActivity : ComponentActivity() {
             // Ambas funciones son 'suspend' y usan Dispatchers.IO internamente
             ProductoInicializador.inicializarProductos(applicationContext)
             UsuarioInicializador.inicializarAdmin(applicationContext)
+
         }
 
         // 3. Crear instancia del servicio API
-        val apiService: ProductoApiService = RetrofitClient.crearServicio(ProductoApiService::class.java)
+        val apiServiceProduct: ProductoApiService = RetrofitClient.crearServicio(ProductoApiService::class.java)
+        val apiServiceUser: UsuarioApiService = RetrofitClient.crearServicio(UsuarioApiService::class.java)
+        val apiServiceOrden: OrdenApiService = RetrofitClient.crearServicio(OrdenApiService::class.java)
+
 
 
         //4. Crear repositorio con API y DAO
         val productoRepository = ProductoRepository(
             productoDao = database.productoDao(),
-            apiService = apiService
+            apiService = apiServiceProduct
         )
-        val ordenRepository = OrdenRepository(database.ordenDao(), database.carritoDao())
+        val usuarioRepository = UsuarioRepository(
+            usuarioDao = database.usuarioDao(),
+            apiService = apiServiceUser
+        )
+        val ordenRepository = OrdenRepository(
+            ordenDao = database.ordenDao(),
+            carritoDao = database.carritoDao(),
+            apiService = apiServiceOrden
+        )
         val carritoRepository = CarritoRepository(database.carritoDao())
-        val usuarioRepository = UsuarioRepository(database.usuarioDao())
 
         // 5. Crear PreferenciasManager
         val preferenciasManager = PreferenciasManager(applicationContext)

@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -31,6 +32,10 @@ import com.example.levelUpKotlinProject.ui.viewmodel.CarritoViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.OrdenViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.ProductoViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel
+import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel.LoginViewModelFactory
+
 
 /**
  * NavGraph: Define todas las rutas de navegación de la app
@@ -199,19 +204,28 @@ fun NavGraph(
             )
         }
 
-        // Ruta 5: Login Admin
+        // Ruta 5: Login Admin (CORREGIDA PARA USAR DB)
         composable(route = Rutas.LOGIN_ADMIN) {
+
+            // 1. Instanciamos el ViewModel usando el repositorio real
+            val loginViewModel: LoginViewModel = viewModel(
+                factory = LoginViewModelFactory(usuarioRepository)
+            )
+
             LoginAdminScreen(
-                onLoginExitoso = {
+                viewModel = loginViewModel, // Pasamos el VM conectado a BD
+                onLoginExitoso = { username ->
+                    // 2. Guardamos sesión en preferencias SOLO si el login en BD fue exitoso
+                    preferenciasManager.guardarSesionAdmin(username)
+
+                    // 3. Navegamos
                     navController.navigate(Rutas.PANEL_ADMIN) {
                         popUpTo(Rutas.LOGIN_ADMIN) { inclusive = true }
                     }
                 },
                 onVolverClick = {
                     navController.popBackStack()
-                },
-                onValidarCredenciales = preferenciasManager::validarCredencialesAdmin,
-                onGuardarSesion = preferenciasManager::guardarSesionAdmin
+                }
             )
         }
 

@@ -6,8 +6,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,19 +41,25 @@ fun RegistroScreen(
     )
 
     val uiState by viewModel.uiState.collectAsState()
+
+    // Estados locales para campos que el ViewModel original agrupaba o no tenía
+    // (Idealmente, deberías agregar estos campos al RegistroUiState en el futuro)
+    var nombrePila by remember { mutableStateOf("") }
+    var apellido by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var usernameEditadoManualmente by remember { mutableStateOf(false) }
+
+    // Control de visibilidad de contraseñas
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmarPasswordVisible by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Registro de Usuario") },
+                title = { Text("Crear Cuenta") },
                 navigationIcon = {
                     IconButton(onClick = onVolverClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -66,219 +74,222 @@ fun RegistroScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Completa tus datos",
+                text = "Datos Personales",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
-            // 1. CAMPO RUT (Manual)
+            // 1. RUT
             OutlinedTextField(
                 value = uiState.formulario.rut,
                 onValueChange = { viewModel.onRutChange(it) },
                 label = { Text("RUT (ej: 12345678-9) *") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Campo: Nombre Completo
-            OutlinedTextField(
-                value = uiState.formulario.nombreCompleto,
-                onValueChange = { viewModel.onNombreChange(it) },
-                label = { Text("Nombre Completo") },
                 modifier = Modifier.fillMaxWidth(),
-                isError = uiState.errores.nombreCompletoError != null,
-                supportingText = {
-                    uiState.errores.nombreCompletoError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                singleLine = true
             )
 
-            // Campo: Email
+            // 2. NOMBRE Y APELLIDO (Separados para cumplir con el JSON)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = nombrePila,
+                    onValueChange = {
+                        nombrePila = it
+                        // Actualizamos el VM también para validaciones básicas
+                        viewModel.onNombreChange("$it $apellido")
+                    },
+                    label = { Text("Nombre *") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = apellido,
+                    onValueChange = {
+                        apellido = it
+                        viewModel.onNombreChange("$nombrePila $it")
+                    },
+                    label = { Text("Apellido *") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+            }
+
+            // 3. EMAIL
             OutlinedTextField(
                 value = uiState.formulario.email,
-                onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text("Email") },
+                onValueChange = {
+                    viewModel.onEmailChange(it)
+                    // Lógica inteligente: Si el usuario no ha editado el username manualmente,
+                    // sugerimos el username basado en el email (ej: felipe@... -> felipe)
+                    if (!usernameEditadoManualmente) {
+                        username = it.substringBefore("@")
+                    }
+                },
+                label = { Text("Email *") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 isError = uiState.errores.emailError != null,
                 supportingText = {
-                    uiState.errores.emailError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
+                    uiState.errores.emailError?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
                 }
             )
 
-            // Campo: Teléfono
+            // 4. USERNAME (Nuevo campo requerido)
+            OutlinedTextField(
+                value = username,
+                onValueChange = {
+                    username = it
+                    usernameEditadoManualmente = true
+                },
+                label = { Text("Nombre de Usuario *") },
+                leadingIcon = { Icon(Icons.Default.Person, null) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            // 5. TELÉFONO
             OutlinedTextField(
                 value = uiState.formulario.telefono,
                 onValueChange = { viewModel.onTelefonoChange(it) },
-                label = { Text("Teléfono (9 dígitos)") },
+                label = { Text("Teléfono") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                isError = uiState.errores.telefonoError != null,
-                supportingText = {
-                    uiState.errores.telefonoError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                isError = uiState.errores.telefonoError != null
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Divider()
 
-            // Selector Región/Comuna
+            Text(
+                text = "Dirección",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            // 6. REGIÓN Y COMUNA
             SelectorRegionComuna(
                 regionSeleccionada = uiState.formulario.region,
                 comunaSeleccionada = uiState.formulario.comuna,
-                onRegionChange = { nuevaRegion ->
-                    viewModel.onRegionChange(nuevaRegion)
-                },
-                onComunaChange = { nuevaComuna ->
-                    viewModel.onComunaChange(nuevaComuna)
-                }
+                onRegionChange = { viewModel.onRegionChange(it) },
+                onComunaChange = { viewModel.onComunaChange(it) }
             )
 
-            // Campo: Dirección (Calle)
+            // 7. CALLE
             OutlinedTextField(
                 value = uiState.formulario.direccion,
                 onValueChange = { viewModel.onDireccionChange(it) },
-                label = { Text("Dirección (Calle y Número)") },
+                label = { Text("Calle y Número *") },
                 modifier = Modifier.fillMaxWidth(),
-                isError = uiState.errores.direccionError != null,
-                supportingText = {
-                    uiState.errores.direccionError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                isError = uiState.errores.direccionError != null
             )
 
-            // Campo: Contraseña
+            Divider()
+
+            Text(
+                text = "Seguridad",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            // 8. PASSWORD
             OutlinedTextField(
                 value = uiState.formulario.password,
                 onValueChange = { viewModel.onPasswordChange(it) },
-                label = { Text("Contraseña") },
+                label = { Text("Contraseña *") },
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if (passwordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     TextButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Text(
-                            text = if (passwordVisible) "Ocultar" else "Mostrar",
-                            fontSize = 12.sp
-                        )
+                        Text(if (passwordVisible) "Ocultar" else "Mostrar")
                     }
                 },
                 isError = uiState.errores.passwordError != null,
                 supportingText = {
-                    uiState.errores.passwordError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
+                    uiState.errores.passwordError?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
                 }
             )
 
-            // Campo: Confirmar Contraseña
+            // 9. CONFIRMAR PASSWORD
             OutlinedTextField(
                 value = uiState.formulario.confirmarPassword,
                 onValueChange = { viewModel.onConfirmarPasswordChange(it) },
-                label = { Text("Confirmar Contraseña") },
+                label = { Text("Confirmar Contraseña *") },
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if (confirmarPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation = if (confirmarPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     TextButton(onClick = { confirmarPasswordVisible = !confirmarPasswordVisible }) {
-                        Text(
-                            text = if (confirmarPasswordVisible) "Ocultar" else "Mostrar",
-                            fontSize = 12.sp
-                        )
+                        Text(if (confirmarPasswordVisible) "Ocultar" else "Mostrar")
                     }
                 },
-                isError = uiState.errores.confirmarPasswordError != null,
-                supportingText = {
-                    uiState.errores.confirmarPasswordError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                isError = uiState.errores.confirmarPasswordError != null
             )
 
-            // Checkbox: Términos y condiciones
+            // 10. TÉRMINOS
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = uiState.formulario.aceptaTerminos,
                     onCheckedChange = { viewModel.onTerminosChange(it) }
                 )
-                Text(
-                    text = "Acepto los términos y condiciones",
-                    modifier = Modifier.padding(start = 8.dp, top = 12.dp)
-                )
+                Text(text = "Acepto los términos y condiciones")
+            }
+            if (uiState.errores.terminosError != null) {
+                Text(text = uiState.errores.terminosError!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp))
             }
 
-            uiState.errores.terminosError?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 12.sp
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Botón Registrarse
+            // BOTÓN REGISTRAR
             Button(
                 onClick = {
-                    // Validamos formulario
-                    if (viewModel.esFormularioValido()) {
+                    // Validamos que los campos locales también tengan datos
+                    if (viewModel.esFormularioValido() && nombrePila.isNotBlank() && apellido.isNotBlank() && username.isNotBlank()) {
 
                         val nuevoUsuario = Usuario(
+                            // IMPORTANTE: id = 0 indica a Room (y a JSON Server) que es un NUEVO usuario
                             id = 0,
-                            // ✅ CORRECCIÓN: Usamos el RUT escrito por el usuario
+
                             rut = uiState.formulario.rut,
 
-                            nombre = uiState.formulario.nombreCompleto,
-                            apellido = "", // (Opcional: podrías separar el nombre)
-                            username = uiState.formulario.email.split("@")[0],
+                            // Usamos los campos separados correctamente
+                            nombre = nombrePila,
+                            apellido = apellido,
+                            username = username,
+
                             email = uiState.formulario.email,
                             password = uiState.formulario.password,
                             telefono = uiState.formulario.telefono,
-                            fechaNacimiento = Date(),
 
-                            // ✅ DATOS GEOGRÁFICOS
+                            fechaNacimiento = Date(), // Podrías agregar un DatePicker aquí si quisieras
+
                             region = uiState.formulario.region,
                             comuna = uiState.formulario.comuna,
                             direccion = uiState.formulario.direccion,
 
                             fechaRegistro = Date(),
-                            rol = Rol.USUARIO
+                            rol = Rol.USUARIO // Por defecto siempre Usuario Normal
                         )
 
-                        // Guardamos y navegamos
                         viewModel.agregarUsuario(
                             usuario = nuevoUsuario,
-                            onSuccess = {
-                                onRegistroExitoso()
-                            }
+                            onSuccess = { onRegistroExitoso() }
                         )
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                enabled = uiState.formulario.aceptaTerminos
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                // Solo habilitar si los términos están aceptados y no está guardando
+                enabled = uiState.formulario.aceptaTerminos && !uiState.estaGuardando
             ) {
                 if (uiState.estaGuardando) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Guardando...")
                 } else {
                     Text("Registrarse")
                 }

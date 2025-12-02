@@ -187,7 +187,7 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.cargarProductos() }) {
+                        Button(onClick = { viewModel.cargarProductosEnTiempoReal() }) {
                             Text("Reintentar")
                         }
                     }
