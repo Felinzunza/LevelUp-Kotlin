@@ -16,11 +16,11 @@ object ProductoInicializador {
 
         // CRÍTICO: Ejecutar en hilo IO
         withContext(Dispatchers.IO) {
-            val productosExistentes = productoDao.obtenerProductoPorId(1)
+            val productosExistentes = productoDao.obtenerProductoPorId("1")
             if (productosExistentes == null) {
                 val productosDeEjemplo = listOf(
                     Producto(
-                        id = 1,
+                        id = "1",
                         nombre = "Mouse Gamer RGB",
                         descripcion = "Mouse óptico profesional.",
                         precio = 25000.0,
@@ -30,7 +30,7 @@ object ProductoInicializador {
                     ),
                     // ... (Puedes agregar el resto de tus productos aquí si lo deseas)
                     Producto(
-                        id = 2,
+                        id = "2",
                         nombre = "Teclado Mecánico",
                         descripcion = "Teclado mecánico switches azules.",
                         precio = 45000.0,

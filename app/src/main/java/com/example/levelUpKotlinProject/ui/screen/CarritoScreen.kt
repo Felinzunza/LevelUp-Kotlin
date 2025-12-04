@@ -48,7 +48,7 @@ fun CarritoScreen(
     viewModel: CarritoViewModel, // Inyectado para la lógica de compra
     carritoRepository: CarritoRepository,
     onVolverClick: () -> Unit,
-    onProductoClick: (Int) -> Unit,
+    onProductoClick: (String) -> Unit,
     preferenciasManager: PreferenciasManager,
     onIrALogin: () -> Unit
 ) {

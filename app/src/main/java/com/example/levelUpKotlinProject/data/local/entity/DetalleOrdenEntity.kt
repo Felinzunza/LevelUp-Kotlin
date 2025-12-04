@@ -1,36 +1,43 @@
 package com.example.levelUpKotlinProject.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import com.example.levelUpKotlinProject.domain.model.ItemOrden
 
 @Entity(
     tableName = "detalle_orden",
-    primaryKeys = ["ordenId", "productoId"]
+    primaryKeys = ["ordenId", "productoId"], // Llave compuesta
+    foreignKeys = [
+        ForeignKey(
+            entity = OrdenEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["ordenId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["ordenId"])]
 )
 data class DetalleOrdenEntity(
-    // CORRECCIÓN: Usar Int para que coincida con la PK de OrdenEntity
-    val ordenId: Long = 0,
-    val productoId: Int,
+    val ordenId: Long,
+
+    // CAMBIO: Ahora es String
+    val productoId: String,
     val nombre: String,
-    val precio: Double, // 👈 Este es el campo que contiene el precio cobrado
-    val imagenUrl: String,
-    val cantidad: Int = 1
+    val imagenUrl: String?,
+    val precio: Double,
+    val cantidad: Int
 )
 
 
-/**
- * Convierte DetalleOrdenEntity (Datos crudos) a ItemOrden (Modelo de Dominio).
- */
-fun DetalleOrdenEntity.toItemOrden() = ItemOrden(
-    productoId = productoId,
-    ordenId = ordenId,
-
-    nombre = nombre,
-    imagenUrl = imagenUrl,
-
-    // CORRECCIÓN CRÍTICA: Usar 'precio' (el nombre del campo en la Entidad)
-    precioUnitarioFijo = precio,
-    cantidad = cantidad
-)
-
-
+// Convierte la entidad de base de datos al modelo de dominio que usa la UI
+fun DetalleOrdenEntity.toItemOrden(): ItemOrden {
+    return ItemOrden(
+        productoId = productoId,
+        ordenId = ordenId,
+        nombreProducto = nombre, // Mapeamos 'nombre' a 'nombreProducto'
+        imagenUrl = imagenUrl,
+        precioUnitarioFijo = precio, // Mapeamos 'precio' a 'precioUnitarioFijo'
+        cantidad = cantidad
+    )
+}

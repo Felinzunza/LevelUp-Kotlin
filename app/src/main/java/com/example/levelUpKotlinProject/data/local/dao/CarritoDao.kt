@@ -47,7 +47,7 @@ interface CarritoDao {
      * @return CarritoEntity si existe, null si no
      */
     @Query("SELECT * FROM carrito WHERE productoId = :productoId LIMIT 1")
-    suspend fun obtenerPorProductoId(productoId: Int): CarritoEntity?
+    suspend fun obtenerPorProductoId(productoId: String): CarritoEntity?
 
     /**
      * NUEVA: Actualiza la cantidad de un producto en el carrito
@@ -55,12 +55,12 @@ interface CarritoDao {
      * @param cantidad Nueva cantidad (puede ser incremento o valor absoluto)
      */
     @Query("UPDATE carrito SET cantidad = :cantidad WHERE productoId = :productoId")
-    suspend fun actualizarCantidad(productoId: Int, cantidad: Int)
+    suspend fun actualizarCantidad(productoId: String, cantidad: Int)
 
     /**
      * NUEVA: Elimina un producto específico del carrito
      * @param productoId ID del producto a eliminar
      */
     @Query("DELETE FROM carrito WHERE productoId = :productoId")
-    suspend fun eliminarProducto(productoId: Int)
+    suspend fun eliminarProducto(productoId: String)
 }

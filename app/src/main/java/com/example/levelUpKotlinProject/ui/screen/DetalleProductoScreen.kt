@@ -1,218 +1,170 @@
 package com.example.levelUpKotlinProject.ui.screen
 
+import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.data.repository.ProductoRepository
 import com.example.levelUpKotlinProject.domain.model.Producto
 import kotlinx.coroutines.launch
 
-/**
- * DetalleProductoScreen: Muestra información completa de un producto
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleProductoScreen(
-    productoId: Int,
+    productoId: String,
     productoRepository: ProductoRepository,
     carritoRepository: CarritoRepository,
     onVolverClick: () -> Unit
 ) {
-    // Estado del producto
     var producto by remember { mutableStateOf<Producto?>(null) }
     var estaCargando by remember { mutableStateOf(true) }
-    var mostrarMensaje by remember { mutableStateOf(false) }
-    
+    var mensaje by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    
-    // Cargar producto al crear la pantalla
+    val context = LocalContext.current
+
     LaunchedEffect(productoId) {
-        estaCargando = true
-        producto = productoRepository.obtenerProductoPorId(productoId)
+        if (productoId.isBlank()) {
+            estaCargando = false
+            return@LaunchedEffect
+        }
+        val encontrado = productoRepository.obtenerProductoPorId(productoId)
+        producto = encontrado
         estaCargando = false
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Detalle del Producto") },
                 navigationIcon = {
                     IconButton(onClick = onVolverClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
+                        Icon(Icons.Default.ArrowBack, "Volver")
                     }
                 }
             )
         }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when {
-                // Estado: Cargando
-                estaCargando -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+    ) { padding ->
+        // Usamos Box para superponer elementos (contenido y snackbar)
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+
+            if (estaCargando) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (producto == null) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Default.Warning, null, tint = Color.Gray, modifier = Modifier.size(64.dp))
+                    Text("Producto no encontrado", fontSize = 20.sp)
                 }
-                
-                // Estado: Producto no encontrado
-                producto == null -> {
-                    Text(
-                        text = "Producto no encontrado",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                
-                // Estado: Mostrar detalle
-                else -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Imagen grande del producto
-                        val context = LocalContext.current
-                        val imageResId = context.resources.getIdentifier(
-                            producto!!.imagenUrl,
-                            "drawable",
-                            context.packageName
+            } else {
+                val prod = producto!!
+
+                // CAMBIO ESTRUCTURAL:
+                // Usamos Column normal con scroll, y quitamos el weight(1f) que causaba el crash.
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp) // Espacio automático entre elementos
+                ) {
+                    // --- IMAGEN ---
+                    val resourceId = try {
+                        context.resources.getIdentifier(
+                            prod.imagenUrl, "drawable", context.packageName
                         )
-                        
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(if (imageResId != 0) imageResId else producto!!.imagenUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = producto!!.nombre,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(250.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Crop
+                    } catch (e: Exception) { 0 }
+
+                    if (resourceId != 0) {
+                        Image(
+                            painter = painterResource(id = resourceId),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxWidth().height(250.dp)
                         )
-                        
-                        // Nombre del producto
-                        Text(
-                            text = producto!!.nombre,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        
-                        // Categoría
-                        Text(
-                            text = "Categoría: ${producto!!.categoria}",
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        Divider()
-                        
-                        // Descripción
-                        Text(
-                            text = "Descripción",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = producto!!.descripcion,
-                            fontSize = 16.sp
-                        )
-                        
-                        Divider()
-                        
-                        // Precio
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                    } else {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().height(250.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.LightGray)
                         ) {
-                            Text(
-                                text = "Precio:",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = producto!!.precioFormateado(),
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        
-                        // Stock
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Stock disponible:",
-                                fontSize = 16.sp
-                            )
-                            Text(
-                                text = "${producto!!.stock} unidades",
-                                fontSize = 16.sp,
-                                color = if (producto!!.hayStock) {
-                                    MaterialTheme.colorScheme.secondary
-                                } else {
-                                    MaterialTheme.colorScheme.error
-                                }
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.weight(1f))
-                        
-                        // Botón agregar al carrito
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    producto?.let {
-                                        carritoRepository.agregarProducto(it)
-                                        mostrarMensaje = true
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = producto!!.hayStock
-                        ) {
-                            Text("Agregar al Carrito")
-                        }
-                        
-                        // Mensaje de confirmación
-                        if (mostrarMensaje) {
-                            Text(
-                                text = "✓ Producto agregado al carrito",
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                            LaunchedEffect(Unit) {
-                                kotlinx.coroutines.delay(2000)
-                                mostrarMensaje = false
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("Imagen: ${prod.imagenUrl} no encontrada")
                             }
                         }
                     }
+
+                    // --- DATOS ---
+                    Text(text = prod.nombre, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+
+                    Text(
+                        text = "$${prod.precio.toInt()}",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Text(text = "Categoría: ${prod.categoria}", color = Color.Gray)
+
+                    if (prod.stock > 0) {
+                        Text("Stock disponible: ${prod.stock}", color = Color(0xFF2E7D32))
+                    } else {
+                        Text("Agotado", color = Color.Red, fontWeight = FontWeight.Bold)
+                    }
+
+                    HorizontalDivider()
+
+                    Text(text = "Descripción", fontWeight = FontWeight.Bold)
+                    Text(text = prod.descripcion)
+
+                    // Espacio final para que el botón no quede pegado al borde si hay mucho texto
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
+
+                // BOTÓN FLOTANTE O FIJO AL FONDO
+                // Lo ponemos fuera del Column con scroll para que siempre esté visible abajo
+                Button(
+                    onClick = {
+                        scope.launch {
+                            carritoRepository.agregarProducto(prod)
+                            mensaje = "¡Agregado al carrito!"
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    enabled = prod.stock > 0
+                ) {
+                    Icon(Icons.Default.ShoppingCart, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Agregar al Carrito")
+                }
+            }
+
+            // Snackbar
+            if (mensaje != null) {
+                Snackbar(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 80.dp, start = 16.dp, end = 16.dp), // Subimos un poco para no tapar el botón
+                    action = { TextButton(onClick = { mensaje = null }) { Text("OK") } }
+                ) { Text(mensaje!!) }
             }
         }
     }

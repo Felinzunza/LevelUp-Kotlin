@@ -64,7 +64,7 @@ interface OrdenDao {
     // Usamos 'AS' para que Room sepa mapear la columna SQL a la variable de Kotlin
     @Query("""SELECT productoId,
                     ordenId,
-                    nombre,
+                    nombre AS nombreProducto,
                     imagenUrl,
                     precio AS precioUnitarioFijo,  
                     cantidad

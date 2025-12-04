@@ -195,7 +195,7 @@ class OrdenRepository(
             DetalleOrdenEntity(
                 ordenId = dto.id,
                 productoId = itemDto.productoId,
-                nombre = itemDto.nombre,
+                nombre = itemDto.nombreProducto,
                 cantidad = itemDto.cantidad,
                 precio = itemDto.precioUnitarioFijo,
                 imagenUrl = itemDto.imagenUrl ?: ""
@@ -236,7 +236,7 @@ class OrdenRepository(
                 ItemOrdenDto(
                     productoId = detalle.productoId,
                     ordenId = detalle.ordenId,
-                    nombre = detalle.nombre,
+                    nombreProducto = detalle.nombre,
                     cantidad = detalle.cantidad,
                     precioUnitarioFijo = detalle.precio,
                     imagenUrl = detalle.imagenUrl

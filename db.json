@@ -71,6 +71,15 @@
       "image": "webcam_hd",
       "category": "Periféricos",
       "stock": 8
+    },
+    {
+      "category": "Juegos De Mesa",
+      "description": "sjdjjqjd",
+      "id": "0c59",
+      "price": 56345,
+      "stock": 31,
+      "title": "ajedrez",
+      "image": "teclado_mecanico"
     }
   ],
   "users": [
@@ -123,22 +132,6 @@
       "role": "USUARIO"
     },
     {
-      "id": "104",
-      "rut": "9.111.222-3",
-      "name": "Pedro",
-      "lastname": "Pascal",
-      "birthday": "1975-04-02",
-      "registrationDate": "2024-04-01",
-      "username": "Mando",
-      "email": "mando@starwars.com",
-      "password": "Beskar123",
-      "phone": "+56911223344",
-      "direction": "Alameda 777",
-      "city": "Santiago",
-      "region": "Metropolitana",
-      "role": "USUARIO"
-    },
-    {
       "id": "105",
       "rut": "44.444.444-4",
       "name": "Juan",
@@ -185,22 +178,6 @@
       "city": "Los Ángeles",
       "region": "Biobío",
       "role": "USUARIO"
-    },
-    {
-      "id": "108",
-      "lastname": "hugo",
-      "city": "Padre Las Casas",
-      "direction": "Ortiz de rosas 42",
-      "email": "mario@gmail.com",
-      "birthday": "2025-12-01",
-      "registrationDate": "2025-12-01",
-      "name": "mario",
-      "password": "Cliente1",
-      "region": "Araucanía",
-      "role": "USUARIO",
-      "rut": "84848282-8",
-      "phone": "323232323",
-      "username": "mario"
     }
   ],
   "orders": [
@@ -371,6 +348,78 @@
       "rut": "84848282-8",
       "subtotal": 224980,
       "total": 224985
+    },
+    {
+      "id": 0,
+      "shippingCost": 5,
+      "courier": "CORREOS_CHILE",
+      "discount": 0,
+      "shippingAddress": ", , ",
+      "status": "EN_PREPARACION",
+      "date": "2025-12-04T00:48:41",
+      "items": [
+        {
+          "quantity": 1,
+          "imageUrl": "mouse_gamer",
+          "productName": "Mouse Gamer RGB",
+          "orderId": 0,
+          "price": 25000,
+          "productId": "1"
+        },
+        {
+          "quantity": 1,
+          "imageUrl": "teclado_mecanico",
+          "productName": "ajedrez",
+          "orderId": 0,
+          "price": 56345,
+          "productId": "0c59"
+        },
+        {
+          "quantity": 1,
+          "imageUrl": "audifonos_rgb",
+          "productName": "Audífonos Gamer RGB",
+          "orderId": 0,
+          "price": 34990,
+          "productId": "3"
+        }
+      ],
+      "paymentMethod": "TARJETA_DEBITO",
+      "clientName": "Diego",
+      "rut": "9.876.654-8",
+      "subtotal": 116335,
+      "total": 116340
+    },
+    {
+      "id": 0,
+      "shippingCost": 5,
+      "courier": "CORREOS_CHILE",
+      "discount": 0,
+      "shippingAddress": "dusjxjd, Chile Chico, Aysén",
+      "status": "EN_PREPARACION",
+      "date": "2025-12-04T01:01:16",
+      "items": [
+        {
+          "quantity": 1,
+          "imageUrl": "silla_gamer",
+          "productName": "Silla Gamer",
+          "orderId": 0,
+          "price": 129990,
+          "productId": "6"
+        },
+        {
+          "quantity": 1,
+          "imageUrl": "mousepad_xxl",
+          "productName": "Mousepad XXL",
+          "orderId": 0,
+          "price": 14990,
+          "productId": "5"
+        }
+      ],
+      "paymentMethod": "TARJETA_DEBITO",
+      "clientName": "Diego",
+      "rut": "9.876.654-8",
+      "subtotal": 144980,
+      "total": 144985
     }
   ]
 }

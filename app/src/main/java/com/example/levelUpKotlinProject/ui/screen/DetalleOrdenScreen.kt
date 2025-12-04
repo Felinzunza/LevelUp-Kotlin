@@ -212,7 +212,7 @@ fun ItemOrdenCard(item: ItemOrden) {
             // Columna Izquierda: Nombre y Cantidad
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.nombre,
+                    text = item.nombreProducto,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyLarge
                 )

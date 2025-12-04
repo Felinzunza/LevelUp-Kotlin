@@ -45,7 +45,7 @@ class CarritoViewModel(application: Application,
     // StateFlow para productos disponibles (hardcoded para este lab)
     val productosDisponibles = listOf(
         Producto(
-            id = 1, 
+            id = "1",
             nombre = "Mouse Gamer", 
             descripcion = "Mouse óptico RGB con 6 botones", 
             precio = 25000.0, 
@@ -54,7 +54,7 @@ class CarritoViewModel(application: Application,
             stock = 10
         ),
         Producto(
-            id = 2, 
+            id = "2",
             nombre = "Teclado Mecánico", 
             descripcion = "Teclado mecánico RGB retroiluminado", 
             precio = 45000.0, 
@@ -63,7 +63,7 @@ class CarritoViewModel(application: Application,
             stock = 5
         ),
         Producto(
-            id = 3, 
+            id = "3",
             nombre = "Audífonos RGB", 
             descripcion = "Audífonos gaming con micrófono", 
             precio = 35000.0, 

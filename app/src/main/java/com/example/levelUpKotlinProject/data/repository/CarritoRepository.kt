@@ -72,7 +72,7 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
      * @param productoId ID del producto
      * @param nuevaCantidad Cantidad a establecer (no suma, reemplaza)
      */
-    suspend fun modificarCantidad(productoId: Int, nuevaCantidad: Int) {
+    suspend fun modificarCantidad(productoId: String, nuevaCantidad: Int) {
         if (nuevaCantidad <= 0) {
             // Si la cantidad es 0 o negativa → eliminar
             eliminarProducto(productoId)
@@ -85,7 +85,7 @@ class CarritoRepository(private val carritoDao: CarritoDao) {
     /**
      * NUEVO: Elimina un producto específico del carrito
      */
-    suspend fun eliminarProducto(productoId: Int) {
+    suspend fun eliminarProducto(productoId: String) {
         carritoDao.eliminarProducto(productoId)
     }
 

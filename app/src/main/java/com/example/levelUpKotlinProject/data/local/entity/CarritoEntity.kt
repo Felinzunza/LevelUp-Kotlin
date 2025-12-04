@@ -15,7 +15,7 @@ import com.example.levelUpKotlinProject.domain.model.Producto
 data class CarritoEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val productoId: Int,
+    val productoId: String,
     val nombre: String,
     val descripcion: String,
     val precio: Double,

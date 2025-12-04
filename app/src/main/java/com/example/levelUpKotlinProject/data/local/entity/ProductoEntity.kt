@@ -11,8 +11,10 @@ import com.example.levelUpKotlinProject.domain.model.Producto
  */
 @Entity(tableName = "productos")
 data class ProductoEntity(
+    // CAMBIO: ID String y sin autogenerar (usamos el del servidor)
     @PrimaryKey(autoGenerate = false)
-    val id: Int = 0,
+    val id: String,
+
     val nombre: String,
     val descripcion: String,
     val precio: Double,
@@ -21,9 +23,6 @@ data class ProductoEntity(
     val stock: Int
 )
 
-/**
- * Convierte la entidad de base de datos al modelo del dominio
- */
 fun ProductoEntity.toProducto() = Producto(
     id = id,
     nombre = nombre,
@@ -34,9 +33,6 @@ fun ProductoEntity.toProducto() = Producto(
     stock = stock
 )
 
-/**
- * Convierte el modelo del dominio a entidad de base de datos
- */
 fun Producto.toEntity() = ProductoEntity(
     id = id,
     nombre = nombre,

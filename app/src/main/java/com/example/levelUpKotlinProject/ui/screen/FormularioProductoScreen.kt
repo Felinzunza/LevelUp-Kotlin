@@ -235,7 +235,7 @@ fun FormularioProductoScreen(
                                     // 🛑 AQUÍ ESTÁ LA SOLUCIÓN:
                                     // Si editamos, mantenemos el ID original (ej: 105).
                                     // Si es nuevo, usamos 0.
-                                    id = productoExistente?.id ?: 0,
+                                    id = productoExistente?.id ?: "",
 
                                     nombre = nombre.trim(),
                                     descripcion = descripcion.trim(),

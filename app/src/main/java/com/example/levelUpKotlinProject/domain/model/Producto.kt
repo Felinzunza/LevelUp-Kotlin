@@ -7,7 +7,7 @@ package com.example.levelUpKotlinProject.domain.model
  * 
  */
 data class Producto(
-    val id: Int = 0,
+    val id: String = "",
     val nombre: String,
     val descripcion: String,
     val precio: Double,

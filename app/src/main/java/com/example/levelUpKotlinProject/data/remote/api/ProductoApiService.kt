@@ -14,39 +14,28 @@ import retrofit2.http.Query
 /**
  * Interface del servicio API - Define endpoints disponibles
  */
+
 interface ProductoApiService {
 
-    // GET: Obtener todos los productos
     @GET("products")
     suspend fun obtenerTodosLosProductos(): Response<List<ProductoDto>>
 
-    // GET: Obtener producto por ID
+    // CAMBIO: ID es String
     @GET("products/{id}")
-    suspend fun obtenerProductoPorId(
-        @Path("id") identificador: Int
-    ): Response<ProductoDto>
+    suspend fun obtenerProductoPorId(@Path("id") id: String): Response<ProductoDto>
 
-    // GET: Obtener productos por categoria
-    @GET("products/category/{categoria}")
-    suspend fun obtenerProductosPorCategoria(
-        @Path("categoria") nombreCategoria: String
-    ): Response<List<ProductoDto>>
-
-    // POST: Crear nuevo producto
+    // POST no lleva ID en la URL
     @POST("products")
     suspend fun agregarProducto(@Body producto: ProductoDto): Response<ProductoDto>
 
-
-    // PUT: Actualizar producto existente
+    // CAMBIO: ID es String
     @PUT("products/{id}")
     suspend fun modificarProducto(
-        @Path("id") identificador: Int,
-        @Body productoActualizado: ProductoDto
+        @Path("id") id: String,
+        @Body producto: ProductoDto
     ): Response<ProductoDto>
 
-    // DELETE: Eliminar producto
+    // CAMBIO: ID es String
     @DELETE("products/{id}")
-    suspend fun borrarProducto(
-        @Path("id") identificador: Int
-    ): Response<Unit>
+    suspend fun borrarProducto(@Path("id") id: String): Response<Unit>
 }

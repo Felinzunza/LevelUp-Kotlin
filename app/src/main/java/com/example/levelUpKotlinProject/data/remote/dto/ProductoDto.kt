@@ -4,8 +4,9 @@ import com.example.levelUpKotlinProject.domain.model.Producto
 import com.google.gson.annotations.SerializedName
 
 data class ProductoDto(
+    // CAMBIO: String nullable
     @SerializedName("id")
-    val identificador: Int? = null,
+    val id: String? = null,
 
     @SerializedName("title")
     val titulo: String,
@@ -28,7 +29,8 @@ data class ProductoDto(
 
 fun ProductoDto.aModelo(): Producto {
     return Producto(
-        id = this.identificador ?:0,
+        // Si viene nulo, usamos cadena vacía
+        id = this.id ?: "",
         nombre = this.titulo,
         descripcion = this.descripcion,
         precio = this.precio,
@@ -38,14 +40,15 @@ fun ProductoDto.aModelo(): Producto {
     )
 }
 
-// Extension function: Modelo de dominio → DTO
 fun Producto.aDto(): ProductoDto {
     return ProductoDto(
-        identificador =if (this.id == 0) null else this.id,
+        // Si el ID está vacío (nuevo), enviamos null para que el server genere uno
+        id = if (this.id.isBlank()) null else this.id,
         titulo = this.nombre,
         descripcion = this.descripcion,
         precio = this.precio,
         urlImagen = this.imagenUrl,
-        categoria = this.categoria
+        categoria = this.categoria,
+        stock = this.stock
     )
 }

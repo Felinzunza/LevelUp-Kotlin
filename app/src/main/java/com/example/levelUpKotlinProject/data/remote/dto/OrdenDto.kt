@@ -62,13 +62,13 @@ data class ItemOrdenDto(
 
 
     @SerializedName("productId")
-    val productoId: Int,
+    val productoId: String,
 
     @SerializedName("orderId")
     val ordenId: Long?,
 
     @SerializedName("productName")
-    val nombre: String,
+    val nombreProducto: String,
 
     @SerializedName("imageUrl")
     val imagenUrl: String?,
@@ -90,8 +90,7 @@ fun ItemOrdenDto.aModelo(): ItemOrden {
         // Si ordenId viene nulo en el JSON, usamos 0 como valor por defecto
         ordenId = ordenId ?: 0,
 
-        // ✅ CORRECCIÓN: Usamos 'nombre' que es lo que pide tu clase ItemOrden
-        nombre = nombre,
+        nombreProducto = nombreProducto,
 
         imagenUrl = imagenUrl,
 
@@ -130,6 +129,8 @@ fun OrdenDto.aModelo(): Orden {
         items = items.map { it.aModelo() }
     )
 }
+
+
 
 
 

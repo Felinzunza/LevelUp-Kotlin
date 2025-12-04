@@ -54,7 +54,7 @@ class ProductoViewModel(
     /**
      * Busca un producto por ID (Útil para la pantalla de edición)
      */
-    suspend fun obtenerProductoPorId(id: Int): Producto? {
+    suspend fun obtenerProductoPorId(id: String): Producto? {
         return repositorio.obtenerProductoPorId(id)
     }
 

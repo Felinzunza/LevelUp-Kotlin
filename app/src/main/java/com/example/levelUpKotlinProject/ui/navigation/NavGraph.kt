@@ -138,10 +138,10 @@ fun NavGraph(
         composable(
             route = "${Rutas.DETALLE}/{productoId}",
             arguments = listOf(
-                navArgument("productoId") { type = NavType.IntType }
+                navArgument("productoId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val productoId = backStackEntry.arguments?.getInt("productoId") ?: 0
+            val productoId = backStackEntry.arguments?.getString("productoId") ?: ""
 
             DetalleProductoScreen(
                 productoId = productoId,
@@ -291,35 +291,40 @@ fun NavGraph(
             )
         }
 
-        // Ruta 7: Formulario Producto (agregar o editar)
+        // Ruta 7: Formulario Producto (ID STRING)
         composable(
-            route = Rutas.FORMULARIO_PRODUCTO,
+            route = Rutas.FORMULARIO_PRODUCTO, // Asegúrate que en Rutas.kt sea "formulario_producto?productoId={productoId}"
             arguments = listOf(
                 navArgument("productoId") {
-                    type = NavType.IntType
-                    defaultValue = -1
+                    type = NavType.StringType // CAMBIO CRÍTICO
+                    defaultValue = "" // Vacío significa nuevo
+                    nullable = true
                 }
             )
         ) { backStackEntry ->
-            val productoId = backStackEntry.arguments?.getInt("productoId") ?: -1
+            // Obtenemos String
+            val productoId = backStackEntry.arguments?.getString("productoId") ?: ""
+
             val productos by productoViewModel.uiState.collectAsState()
-            val productoEditar = if (productoId != -1) {
+
+            // Buscamos comparando String con String
+            val productoEditar = if (productoId.isNotBlank()) {
                 productos.productos.find { it.id == productoId }
             } else null
 
             FormularioProductoScreen(
                 productoExistente = productoEditar,
                 onGuardar = { producto ->
-                    if (producto.id == 0) {
+                    // Si el ID está vacío, es nuevo -> Agregar
+                    if (producto.id.isBlank()) {
                         productoViewModel.agregarProducto(producto)
                     } else {
+                        // Si tiene ID, es existente -> Actualizar
                         productoViewModel.actualizarProducto(producto)
                     }
                     navController.popBackStack()
                 },
-                onCancelar = {
-                    navController.popBackStack()
-                }
+                onCancelar = { navController.popBackStack() }
             )
         }
 
