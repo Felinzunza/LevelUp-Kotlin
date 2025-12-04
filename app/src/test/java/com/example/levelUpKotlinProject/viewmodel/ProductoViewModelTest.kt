@@ -7,7 +7,6 @@ import org.junit.Assert.*
 /**
  * Tests unitarios simples para ProductoViewModel - Optimizados para educación
  * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 class ProductoViewModelTest {
 
@@ -28,7 +27,7 @@ class ProductoViewModelTest {
         // Test con productos
         val productos = listOf(
             com.example.levelUpKotlinProject.domain.model.Producto(
-                id = 1,
+                id = "1",
                 nombre = "Mouse",
                 descripcion = "Mouse gamer",
                 precio = 25000.0,
@@ -37,12 +36,12 @@ class ProductoViewModelTest {
                 stock = 10
             )
         )
-        
+
         val uiState = ProductoUiState(
             productos = productos,
             estaCargando = false
         )
-        
+
         // Verificar estado con productos
         assertEquals(1, uiState.productos.size)
         assertEquals("Mouse", uiState.productos.first().nombre)
@@ -86,7 +85,7 @@ class ProductoViewModelTest {
         val uiStateOriginal = ProductoUiState(
             productos = listOf(
                 com.example.levelUpKotlinProject.domain.model.Producto(
-                    id = 1,
+                    id = "1",
                     nombre = "Mouse Original",
                     descripcion = "Descripción original",
                     precio = 25000.0,

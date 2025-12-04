@@ -17,7 +17,7 @@ class ProductoRepositoryImplTest {
     fun `ProductoEntity - creación básica funciona correctamente`() {
         // Test de entidad básica
         val productoEntity = ProductoEntity(
-            id = 1,
+            id = "1",
             nombre = "Mouse Gamer",
             descripcion = "Mouse RGB inalámbrico",
             precio = 25000.0,
@@ -27,7 +27,7 @@ class ProductoRepositoryImplTest {
         )
 
         // Verificar valores
-        assertEquals(1, productoEntity.id)
+        assertEquals("1", productoEntity.id)
         assertEquals("Mouse Gamer", productoEntity.nombre)
         assertEquals("Mouse RGB inalámbrico", productoEntity.descripcion)
         assertEquals(25000.0, productoEntity.precio, 0.01)
@@ -40,7 +40,7 @@ class ProductoRepositoryImplTest {
     fun `ProductoDto - creación básica funciona correctamente`() {
         // Test de DTO básico
         val productoDto = ProductoDto(
-            identificador = 1,
+            id = "1",
             titulo = "Mouse Gamer",
             descripcion = "Mouse RGB inalámbrico",
             precio = 25000.0,
@@ -49,7 +49,7 @@ class ProductoRepositoryImplTest {
         )
 
         // Verificar valores
-        assertEquals(1, productoDto.identificador)
+        assertEquals("1", productoDto.id)
         assertEquals("Mouse Gamer", productoDto.titulo)
         assertEquals("Mouse RGB inalámbrico", productoDto.descripcion)
         assertEquals(25000.0, productoDto.precio, 0.01)
@@ -61,7 +61,7 @@ class ProductoRepositoryImplTest {
     fun `ProductoDomain - creación básica funciona correctamente`() {
         // Test de modelo de dominio básico
         val producto = Producto(
-            id = 1,
+            id = "1",
             nombre = "Mouse Gamer",
             descripcion = "Mouse RGB inalámbrico",
             precio = 25000.0,
@@ -71,7 +71,7 @@ class ProductoRepositoryImplTest {
         )
 
         // Verificar valores
-        assertEquals(1, producto.id)
+        assertEquals("1", producto.id)
         assertEquals("Mouse Gamer", producto.nombre)
         assertEquals("Mouse RGB inalámbrico", producto.descripcion)
         assertEquals(25000.0, producto.precio, 0.01)
@@ -83,7 +83,7 @@ class ProductoRepositoryImplTest {
     @Test
     fun `ProductoEntity - equals funciona correctamente`() {
         val productoEntity1 = ProductoEntity(
-            id = 1,
+            id = "1",
             nombre = "Producto 1",
             descripcion = "Descripción 1",
             precio = 100.0,
@@ -93,7 +93,7 @@ class ProductoRepositoryImplTest {
         )
 
         val productoEntity2 = ProductoEntity(
-            id = 1,
+            id = "1",
             nombre = "Producto 1",
             descripcion = "Descripción 1",
             precio = 100.0,
@@ -108,7 +108,7 @@ class ProductoRepositoryImplTest {
     @Test
     fun `ProductoDomain - equals funciona correctamente`() {
         val producto1 = Producto(
-            id = 1,
+            id = "1",
             nombre = "Producto 1",
             descripcion = "Descripción 1",
             precio = 100.0,
@@ -118,7 +118,7 @@ class ProductoRepositoryImplTest {
         )
 
         val producto2 = Producto(
-            id = 1,
+            id = "1",
             nombre = "Producto 1",
             descripcion = "Descripción 1",
             precio = 100.0,
@@ -133,7 +133,7 @@ class ProductoRepositoryImplTest {
     @Test
     fun `ProductoDomain - copia funciona correctamente`() {
         val productoOriginal = Producto(
-            id = 1,
+            id = "1",
             nombre = "Original",
             descripcion = "Descripción original",
             precio = 100.0,
@@ -162,7 +162,7 @@ class ProductoRepositoryImplTest {
     fun `transformación de datos - manejo de precios edge cases funciona correctamente`() {
         // Test con precio cero
         val productoGratis = Producto(
-            id = 1,
+            id = "1",
             nombre = "Gratis",
             descripcion = "Producto gratuito",
             precio = 0.0,
@@ -176,7 +176,7 @@ class ProductoRepositoryImplTest {
 
         // Test con precio grande
         val productoCaro = Producto(
-            id = 2,
+            id = "2",
             nombre = "Caro",
             descripcion = "Producto muy caro",
             precio = 999999.99,
