@@ -39,8 +39,8 @@ fun AdminPanelScreen(
     onEliminarProducto: (Producto) -> Unit,
     onCerrarSesion: () -> Unit,
 
-    onVerDetalleOrden: (Long) -> Unit,
-    onCambiarEstadoOrden: (ordenId: Long, nuevoEstado: String) -> Unit,
+    onVerDetalleOrden: (String) -> Unit,
+    onCambiarEstadoOrden: (ordenId: String, nuevoEstado: String) -> Unit,
 ) {
 
     var mostrarDialogoEliminarUsuario by remember { mutableStateOf<Usuario?>(null) }
@@ -408,8 +408,8 @@ fun AdminUsuarioCard(
 @Composable
 fun OrdenesPanelContent(
     ordenes: List<Orden>, // Lista de modelos de dominio Orden
-    onVerDetalle: (Long) -> Unit,
-    onCambiarEstadoOrden: (ordenId: Long, nuevoEstado: String) -> Unit
+    onVerDetalle: (String) -> Unit,
+    onCambiarEstadoOrden: (ordenId: String, nuevoEstado: String) -> Unit
 ) {
     if (ordenes.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -424,7 +424,7 @@ fun OrdenesPanelContent(
             items(ordenes) { orden ->
                 OrdenCard(
                     orden = orden,
-                    onDetalleClick = { onVerDetalle(orden.id.toLong()) }, // Aseguramos que sea Long
+                    onDetalleClick = { onVerDetalle(orden.id)}, // Aseguramos que sea Long
                     onCambiarEstado = { ordenId, nuevoEstado ->
                         onCambiarEstadoOrden(ordenId, nuevoEstado)
                     }
@@ -438,7 +438,7 @@ fun OrdenesPanelContent(
 fun OrdenCard(
     orden: Orden,
     onDetalleClick: () -> Unit,
-    onCambiarEstado: (Long, String) -> Unit
+    onCambiarEstado: (String, String) -> Unit
 
 ) {
     Card(
@@ -528,7 +528,7 @@ fun EstadisticasPanel(productos: List<Producto>, ordenes: List<Orden>) {
         // Valor inventario
         EstadisticaCard(
             titulo = "Valor Inventario",
-            valor = "$${productos.sumOf { it.precio * it.stock }.toInt()}",
+            valor = "$${productos.sumOf { it.precio * it.stock }.toString()}",
             icono = Icons.Filled.Star
         )
 

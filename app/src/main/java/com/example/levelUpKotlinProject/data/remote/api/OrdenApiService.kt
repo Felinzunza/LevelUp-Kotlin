@@ -20,17 +20,17 @@ interface OrdenApiService {
     suspend fun obtenerOrdenesXUsuario(@Path("rut") rut: String): Response<List<OrdenDto>>
 
     @GET("orders/{id}")
-    suspend fun obtenerOrdenPorId(@Path("id") id: Long): Response<OrdenDto>
+    suspend fun obtenerOrdenPorId(@Path("id") id: String): Response<OrdenDto>
 
     @POST("orders")
     suspend fun crearOrden(@Body orden: OrdenDto): Response<OrdenDto>
 
 
     @PATCH("orders/{id}")
-    suspend fun actualizarEstado(@Path("id") id: Long, @Body estado: Map<String, String>): Response<OrdenDto>
+    suspend fun actualizarEstado(@Path("id") id: String, @Body estado: Map<String, String>): Response<OrdenDto>
 
     @GET("orders/{id}/items")
-    suspend fun obtenerItemsOrden(@Path("id") id: Long): Response<List<ItemOrdenDto>>
+    suspend fun obtenerItemsOrden(@Path("id") id: String): Response<List<ItemOrdenDto>>
 
 }
 

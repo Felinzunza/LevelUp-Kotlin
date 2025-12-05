@@ -36,7 +36,7 @@ object UsuarioInicializador {
             // 2. Si no existe, crear e insertar
             if (adminExistente == null) {
                 val usuarioAdmin = Usuario(
-                    id = 0, // Room generará el ID
+                    id = "101",
                     rut = "1.111.111-1",
                     nombre = "Admin",
                     apellido = "System",

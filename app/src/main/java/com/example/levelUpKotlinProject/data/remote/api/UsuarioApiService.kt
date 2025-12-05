@@ -15,10 +15,8 @@ interface UsuarioApiService {
     suspend fun obtenerTodosLosUsuarios(): Response<List<UsuarioDto>>
 
     //Obtener usuario por ID
-    @GET("users/{id}")
-    suspend fun obtenerUsuarioPorId(
-        @Path("id") identificador: Int
-    ): Response<UsuarioDto>
+    @GET("users/{id}") // ID String
+    suspend fun obtenerUsuarioPorId(@Path("id") id: String): Response<UsuarioDto>
 
     //Obtener usuario por email
     @GET("users/email/{email}")
@@ -52,18 +50,13 @@ interface UsuarioApiService {
         @Body nuevoUsuario: UsuarioDto
     ): Response<UsuarioDto>
 
-    //Actualizar usuario existente
-    @PUT("users/{id}")
+    @PUT("users/{id}") // ID String
     suspend fun modificarUsuario(
-        @Path("id") identificador: Int,
-        @Body usuarioActualizado: UsuarioDto
+        @Path("id") id: String, @Body usuario: UsuarioDto
     ): Response<UsuarioDto>
 
-    //Eliminar usuario
-    @DELETE("users/{id}")
-    suspend fun borrarUsuario(
-        @Path("id") identificador: Int
-    ): Response<Unit>
+    @DELETE("users/{id}") // ID String
+    suspend fun borrarUsuario(@Path("id") id: String): Response<Unit>
 
 
 

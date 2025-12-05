@@ -36,10 +36,10 @@ object Rutas {
 
 
     // Funciones helper para pasar argumentos
-    fun detalleOrden(ordenId: Long) = "detalle_orden/$ordenId"
+    fun detalleOrden(ordenId: String) = "detalle_orden/$ordenId"
 
     fun formularioEditarProducto(id: String) = "formulario_producto?productoId=$id"
-    fun formularioEditarUsuario(id: Int) = "formulario_usuario?usuarioId=$id"
+    fun formularioEditarUsuario(id: String) = "formulario_usuario?usuarioId=$id"
 
 
 

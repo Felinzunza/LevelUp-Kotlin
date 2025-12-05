@@ -6,29 +6,26 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UsuarioDao {
-
-    @Query("SELECT * FROM usuarios ORDER BY nombre ASC")
+    @Query("SELECT * FROM usuarios")
     fun obtenerTodosLosusuarios(): Flow<List<UsuarioEntity>>
 
     @Query("SELECT * FROM usuarios WHERE id = :id")
-    suspend fun obtenerusuarioPorId(id: Int): UsuarioEntity
+    suspend fun obtenerusuarioPorId(id: String): UsuarioEntity? // ID String
 
-    @Query("SELECT * FROM usuarios WHERE rut = :rut")
-    suspend fun obtenerusuarioPorRut(rut: String): UsuarioEntity
+    @Query("SELECT * FROM usuarios WHERE rut = :rut LIMIT 1")
+    suspend fun obtenerusuarioPorRut(rut: String): UsuarioEntity?
 
-    // Métodos de búsqueda opcionales (nullable)
-    @Query("SELECT * FROM usuarios WHERE email = :email")
+    @Query("SELECT * FROM usuarios WHERE email = :email LIMIT 1")
     suspend fun obtenerUsuarioPorEmail(email: String): UsuarioEntity?
 
-    @Query("SELECT * FROM usuarios WHERE username = :username")
+    @Query("SELECT * FROM usuarios WHERE username = :username LIMIT 1")
     suspend fun obtenerUsuarioPorUsername(username: String): UsuarioEntity?
 
-    // Escritura
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarusuarios(usuarios: List<UsuarioEntity>)
+    suspend fun insertarusuario(usuario: UsuarioEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarusuario(usuario: UsuarioEntity): Long
+    suspend fun insertarUsuarios(usuarios: List<UsuarioEntity>)
 
     @Update
     suspend fun actualizarusuario(usuario: UsuarioEntity)

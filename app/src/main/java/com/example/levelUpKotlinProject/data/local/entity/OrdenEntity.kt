@@ -11,8 +11,8 @@ import java.util.Date
 
 @Entity(tableName = "ordenes")
 data class OrdenEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey(autoGenerate = false)
+    val id: String, // String
 
     // DATOS DEL CLIENTE
     val rutCliente: String,

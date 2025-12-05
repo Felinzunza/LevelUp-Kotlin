@@ -5,243 +5,103 @@ import com.example.levelUpKotlinProject.data.local.dao.CarritoDao
 import com.example.levelUpKotlinProject.data.local.dao.OrdenDao
 import com.example.levelUpKotlinProject.data.local.entity.DetalleOrdenEntity
 import com.example.levelUpKotlinProject.data.local.entity.OrdenEntity
+import com.example.levelUpKotlinProject.data.local.entity.toEntity
 import com.example.levelUpKotlinProject.data.local.entity.toOrden
 import com.example.levelUpKotlinProject.data.local.relations.OrdenConDetalles
 import com.example.levelUpKotlinProject.data.remote.api.OrdenApiService
-import com.example.levelUpKotlinProject.data.remote.dto.ItemOrdenDto
 import com.example.levelUpKotlinProject.data.remote.dto.OrdenDto
+import com.example.levelUpKotlinProject.data.remote.dto.aDto
 import com.example.levelUpKotlinProject.data.remote.dto.aModelo
 import com.example.levelUpKotlinProject.domain.model.ItemOrden
+import com.example.levelUpKotlinProject.domain.model.Orden
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class OrdenRepository(
     private val ordenDao: OrdenDao,
     private val carritoDao: CarritoDao,
     private val apiService: OrdenApiService
 ) {
-
-    companion object {
-        private const val TAG = "OrdenRepository"
-    }
-
-    // =================================================================
-    // 1. LECTURA (Sincronización Reactiva)
-    // =================================================================
+    companion object { private const val TAG = "OrdenRepository" }
 
     fun obtenerTodasLasOrdenes(): Flow<List<OrdenConDetalles>> = flow {
-        sincronizarOrdenesDesdeApi(rutCliente = null)
+        sincronizarOrdenesDesdeApi(null)
         emitAll(ordenDao.obtenerTodasLasOrdenes())
     }
 
     fun obtenerOrdenesXUsuario(rutCliente: String): Flow<List<OrdenConDetalles>> = flow {
-        sincronizarOrdenesDesdeApi(rutCliente = rutCliente)
+        sincronizarOrdenesDesdeApi(rutCliente)
         emitAll(ordenDao.obtenerOrdenesXUsuario(rutCliente))
     }
 
-    fun obtenerOrdenPorId(ordenId: Long): Flow<OrdenConDetalles?> = flow {
+    fun obtenerOrdenPorId(ordenId: String): Flow<OrdenConDetalles?> = flow {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = apiService.obtenerOrdenPorId(ordenId)
                 if (response.isSuccessful && response.body() != null) {
                     guardarOrdenDesdeApi(response.body()!!)
                 }
-            } catch (e: Exception) { Log.e(TAG, "Error refrescando orden $ordenId: ${e.message}") }
+            } catch (e: Exception) { }
         }
         emitAll(ordenDao.obtenerOrdenPorId(ordenId))
     }
 
-    // =================================================================
-    // 2. ESCRITURA (Checkout y Actualización)
-    // =================================================================
-
-    suspend fun finalizarCompraTransaccional(
-        orden: OrdenEntity,
-        detalles: List<DetalleOrdenEntity>
-    ) {
-        var idFinal = orden.id
-
+    suspend fun finalizarCompraTransaccional(orden: OrdenEntity, detalles: List<DetalleOrdenEntity>) {
+        // Para String, no necesitamos calcular ID. Enviamos sin ID para que el server genere.
         try {
-            Log.d(TAG, "Enviando orden a API...")
-            // Mapeamos la entidad local al DTO para enviar
-            val ordenDto = mapearEntidadesADto(orden, detalles)
-            val response = apiService.crearOrden(ordenDto)
+            // Convertimos a modelo con ID vacío para enviar
+            val ordenModelo = orden.toOrden().copy(id = "", items = detalles.map { it.toItemOrden() })
+            val response = apiService.crearOrden(ordenModelo.aDto())
 
             if (response.isSuccessful && response.body() != null) {
-                val ordenCreada = response.body()!!
-                idFinal = ordenCreada.id
-                Log.d(TAG, "✓ Orden creada en servidor con ID: $idFinal")
+                val ordenCreada = response.body()!!.aModelo()
+                Log.d(TAG, "✓ Orden creada servidor ID: ${ordenCreada.id}")
+                guardarOrdenLocal(ordenCreada)
             } else {
-                Log.e(TAG, "⚠ Error API al crear orden: ${response.code()}. Guardando localmente.")
+                // Fallback offline: Generar UUID
+                val idTemp = java.util.UUID.randomUUID().toString()
+                guardarOrdenLocal(orden.toOrden().copy(id = idTemp, items = detalles.map { it.toItemOrden().copy(ordenId = idTemp) }))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "✗ Error de red al crear orden. Guardando localmente: ${e.message}")
+            val idTemp = java.util.UUID.randomUUID().toString()
+            guardarOrdenLocal(orden.toOrden().copy(id = idTemp, items = detalles.map { it.toItemOrden().copy(ordenId = idTemp) }))
         }
-
-        val ordenConIdCorrecto = orden.copy(id = idFinal)
-
-        // Usamos try-catch por si Room intenta abortar por ID duplicado
-        val idInsertado = try {
-            ordenDao.insertOrden(ordenConIdCorrecto)
-        } catch (e: Exception) {
-            if(idFinal != 0L) idFinal else 0L // Si falla inserción, asumimos que ya existe o usamos 0
-        }
-
-        val idParaDetalles = if (idFinal != 0L) idFinal else idInsertado
-
-        val detallesConId = detalles.map { detalle ->
-            detalle.copy(ordenId = idParaDetalles)
-        }
-        ordenDao.insertDetalles(detallesConId)
-
         carritoDao.vaciar()
-        Log.d(TAG, "✓ Compra finalizada y guardada localmente (ID: $idParaDetalles)")
     }
 
-    suspend fun actualizarEstado(ordenId: Long, nuevoEstado: String) {
+    suspend fun actualizarEstado(ordenId: String, nuevoEstado: String) {
         ordenDao.actualizarEstado(ordenId, nuevoEstado)
-
         try {
-            val body = mapOf("status" to nuevoEstado)
-            apiService.actualizarEstado(ordenId, body)
-            Log.d(TAG, "✓ Estado actualizado en API")
-        } catch (e: Exception) {
-            Log.e(TAG, "✗ Error actualizando estado en API: ${e.message}")
-        }
+            apiService.actualizarEstado(ordenId, mapOf("status" to nuevoEstado))
+        } catch (e: Exception) { }
     }
 
-    suspend fun obtenerItemsOrden(ordenId: Long): List<ItemOrden> {
-        return ordenDao.obtenerItemsOrden(ordenId)
-    }
-
-    // --- MÉTODOS BÁSICOS RESTAURADOS ---
-    suspend fun insertOrden(orden: OrdenEntity): Long {
-        return ordenDao.insertOrden(orden)
-    }
-
-    suspend fun insertDetalles(detalles: List<DetalleOrdenEntity>) {
-        ordenDao.insertDetalles(detalles)
-    }
-
-    // =================================================================
-    // 3. FUNCIONES PRIVADAS (Helpers)
-    // =================================================================
-
-    private fun sincronizarOrdenesDesdeApi(rutCliente: String?) {
+    // Helpers
+    private fun sincronizarOrdenesDesdeApi(rut: String?) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = if (rutCliente == null) {
-                    apiService.obtenerTodasLasOrdenes()
-                } else {
-                    apiService.obtenerOrdenesXUsuario(rutCliente)
+                val res = if (rut == null) apiService.obtenerTodasLasOrdenes() else apiService.obtenerOrdenesXUsuario(rut)
+                if (res.isSuccessful && res.body() != null) {
+                    res.body()!!.forEach { guardarOrdenDesdeApi(it) }
                 }
-
-                if (response.isSuccessful && response.body() != null) {
-                    val ordenesDto = response.body()!!
-                    ordenesDto.forEach { dto ->
-                        guardarOrdenDesdeApi(dto)
-                    }
-                    Log.d(TAG, "✓ Sincronización completada: ${ordenesDto.size} órdenes")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Fallo sincronización silenciosa: ${e.message}")
-            }
+            } catch (e: Exception) { }
         }
     }
 
-    // --- CORRECCIÓN PRINCIPAL DE TIPADO ---
     private suspend fun guardarOrdenDesdeApi(dto: OrdenDto) {
-        val modelo = dto.aModelo()
+        guardarOrdenLocal(dto.aModelo())
+    }
 
-        // Aquí hacemos la conversión de tipos manual para que coincida con OrdenEntity
-        val entidadOrden = OrdenEntity(
-            id = modelo.id,
-            rutCliente = modelo.rut,
-            nombreCliente = modelo.nombreCliente,
-
-            // 1. Date -> Long
-            fechaCreacion = modelo.fechaCreacion.time,
-
-            // 2. Mapeo de nombres correctos (según tu screenshot)
-            direccion = modelo.direccionEnvio,
-
-            // 3. Enum -> String (.name)
-            tipoCompra = modelo.metodoPago.name,
-            tipoCourier = modelo.courier.name,
-            estado = modelo.estado.name,
-
-            subtotal = modelo.subtotal,
-            costoEnvio = modelo.costoEnvio,
-            descuento = modelo.descuento,
-
-            // 4. Nombre correcto en Entity
-            totalPagar = modelo.total
-        )
-
-        try {
-            ordenDao.insertOrden(entidadOrden)
-        } catch (e: Exception) {
-            // Ignoramos conflicto si ya existe
-        }
-
-        val detalles = dto.items.map { itemDto ->
-            DetalleOrdenEntity(
-                ordenId = dto.id,
-                productoId = itemDto.productoId,
-                nombre = itemDto.nombreProducto,
-                cantidad = itemDto.cantidad,
-                precio = itemDto.precioUnitarioFijo,
-                imagenUrl = itemDto.imagenUrl ?: ""
-            )
+    private suspend fun guardarOrdenLocal(orden: Orden) {
+        ordenDao.insertOrden(orden.toEntity())
+        val detalles = orden.items.map {
+            DetalleOrdenEntity(orden.id, it.productoId, it.nombreProducto, it.imagenUrl, it.precioUnitarioFijo, it.cantidad)
         }
         ordenDao.insertDetalles(detalles)
     }
 
-    // --- CORRECCIÓN SECUNDARIA DE TIPADO ---
-    private fun mapearEntidadesADto(orden: OrdenEntity, detalles: List<DetalleOrdenEntity>): OrdenDto {
-        val formatoFecha = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-
-        // Convertimos Long -> Date -> String
-        val fechaString = try {
-            formatoFecha.format(Date(orden.fechaCreacion))
-        } catch (e: Exception) {
-            formatoFecha.format(Date())
-        }
-
-        return OrdenDto(
-            id = 0,
-            rut = orden.rutCliente,
-            nombreCliente = orden.nombreCliente,
-            fechaCreacion = fechaString,
-
-            // Usamos los campos de la ENTIDAD (Strings)
-            estado = orden.estado,
-            direccionEnvio = orden.direccion,
-            metodoPago = orden.tipoCompra,
-            courier = orden.tipoCourier,
-
-            subtotal = orden.subtotal,
-            costoEnvio = orden.costoEnvio,
-            descuento = orden.descuento,
-            total = orden.totalPagar,
-
-            items = detalles.map { detalle ->
-                ItemOrdenDto(
-                    productoId = detalle.productoId,
-                    ordenId = detalle.ordenId,
-                    nombreProducto = detalle.nombre,
-                    cantidad = detalle.cantidad,
-                    precioUnitarioFijo = detalle.precio,
-                    imagenUrl = detalle.imagenUrl
-                )
-            }
-        )
-    }
+    // Helper para convertir entidad detalle a item
+    private fun DetalleOrdenEntity.toItemOrden() = ItemOrden(productoId, ordenId, nombre, imagenUrl, precio, cantidad)
 }

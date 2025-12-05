@@ -15,7 +15,7 @@ import java.util.Locale
 
 data class OrdenDto(
     @SerializedName("id")
-    val id: Long,
+    val id: String? = null,
 
     @SerializedName("rut")
     val rut: String,
@@ -65,7 +65,7 @@ data class ItemOrdenDto(
     val productoId: String,
 
     @SerializedName("orderId")
-    val ordenId: Long?,
+    val ordenId: String? = null,
 
     @SerializedName("productName")
     val nombreProducto: String,
@@ -87,14 +87,13 @@ data class ItemOrdenDto(
 fun ItemOrdenDto.aModelo(): ItemOrden {
     return ItemOrden(
         productoId = productoId,
-        // Si ordenId viene nulo en el JSON, usamos 0 como valor por defecto
-        ordenId = ordenId ?: 0,
+
+        ordenId = ordenId ?: "",
 
         nombreProducto = nombreProducto,
 
         imagenUrl = imagenUrl,
 
-        // ✅ CORRECCIÓN: Usamos 'precioUnitarioFijo' que es lo que pide tu clase
         precioUnitarioFijo = precioUnitarioFijo,
 
         cantidad = cantidad
@@ -111,7 +110,7 @@ fun OrdenDto.aModelo(): Orden {
     }
 
     return Orden(
-        id = id,
+        id = id ?: "",
         rut = rut,
         nombreCliente = nombreCliente,
         fechaCreacion = fecha,
@@ -127,6 +126,36 @@ fun OrdenDto.aModelo(): Orden {
         descuento = descuento,
         total = total,
         items = items.map { it.aModelo() }
+    )
+}
+
+//metodo agregado ahora
+fun Orden.aDto(): OrdenDto {
+    val f = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+    return OrdenDto(
+        // Si el ID está vacío (nueva orden), enviamos null para que el server genere uno
+        id = if (id.isBlank()) null else id,
+        rut = rut,
+        nombreCliente = nombreCliente,
+        fechaCreacion = f.format(fechaCreacion),
+        estado = estado.name,
+        direccionEnvio = direccionEnvio,
+        metodoPago = metodoPago.name,
+        courier = courier.name,
+        subtotal = subtotal,
+        costoEnvio = costoEnvio,
+        descuento = descuento,
+        total = total,
+        items = items.map {
+            ItemOrdenDto(
+                productoId = it.productoId,
+                ordenId = it.ordenId.ifBlank { null },
+                nombreProducto = it.nombreProducto, // Mapeamos 'nombre' del modelo a 'nombreProducto' del DTO
+                imagenUrl = it.imagenUrl,
+                precioUnitarioFijo = it.precioUnitarioFijo,
+                cantidad = it.cantidad
+            )
+        }
     )
 }
 

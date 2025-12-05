@@ -32,7 +32,6 @@ import com.example.levelUpKotlinProject.ui.viewmodel.CarritoViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.OrdenViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.ProductoViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel.LoginViewModelFactory
 
@@ -253,7 +252,7 @@ fun NavGraph(
 
                 //SECCIÓN DE USUARIOS
                 onAgregarUsuario = {
-                    navController.navigate("formulario_usuario?usuarioId=-1")
+                    navController.navigate("formulario_usuario?usuarioId=")//aqui hice un cambio pero igual me crasheo
                 },
                 onEditarUsuario = { usuario ->
                     navController.navigate(Rutas.formularioEditarUsuario(usuario.id))
@@ -279,7 +278,7 @@ fun NavGraph(
                     navController.navigate(Rutas.detalleOrden(ordenId))
                 },
                 onCambiarEstadoOrden = { ordenId, nuevoEstado ->
-                    ordenViewModel.actualizarEstado(ordenId, nuevoEstado)
+                    ordenViewModel.actualizarEstadoOrden(ordenId, nuevoEstado)
                 },
 
                 onCerrarSesion = {
@@ -336,27 +335,27 @@ fun NavGraph(
             route = Rutas.FORMULARIO_USUARIO, // Asumiremos que es "formulario_usuario?usuarioId={usuarioId}"
             arguments = listOf(
                 navArgument("usuarioId") {
-                    type = NavType.IntType
-                    defaultValue = -1
+                    type = NavType.StringType
+                    defaultValue = ""
+                    nullable = true
                 }
             )
         ) { backStackEntry ->
-            val usuarioId = backStackEntry.arguments?.getInt("usuarioId") ?: -1
+
+
+
+            val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
 
             // Recoge la lista de usuarios del ViewModel
             val usuarios by registroViewModel.uiState.collectAsState()
-
-            // Lógica para encontrar el usuario a editar (si existe)
-            val usuarioEditar = if (usuarioId != -1) {
-                usuarios.usuarios.find { it.id == usuarioId }
-            } else null
-
-            val onRegistroExitoso: () -> Unit
+            val usuarioEditar = if (usuarioId.isNotBlank()) usuarios.usuarios.find {
+                                    it.id == usuarioId
+                                } else null
 
             FormularioUsuarioScreen(
                 usuarioExistente = usuarioEditar,
                 onGuardar = { usuario ->
-                    if (usuario.id == 0) {
+                    if (usuario.id == "") {
                         // CASO AGREGAR: Ahora requiere el bloque { } al final (el onSuccess)
                         registroViewModel.agregarUsuario(usuario) {
                             // Esto se ejecuta cuando la base de datos termina
@@ -376,9 +375,9 @@ fun NavGraph(
 
         composable(
             route = Rutas.DETALLE_ORDEN,
-            arguments = listOf(navArgument("ordenId") { type = NavType.LongType })
+            arguments = listOf(navArgument("ordenId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val ordenId = backStackEntry.arguments?.getLong("ordenId") ?: -1L
+            val ordenId = backStackEntry.arguments?.getString("ordenId") ?: ""
 
             DetalleOrdenScreen(
                 ordenId = ordenId,

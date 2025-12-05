@@ -4,7 +4,7 @@ import java.util.Date
 import java.util.Locale
 
 data class Orden(
-    val id: Long,
+    val id: String = "",
     val rut: String,
     val nombreCliente: String,
     val fechaCreacion: Date,

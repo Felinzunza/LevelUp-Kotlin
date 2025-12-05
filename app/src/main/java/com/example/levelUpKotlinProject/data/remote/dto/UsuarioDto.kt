@@ -12,7 +12,7 @@ import java.util.Date
 data class UsuarioDto(
 
     @SerializedName("id")
-    val id: Int,
+    val id: String? = null,
 
     @SerializedName("rut")
     val rut: String,
@@ -59,7 +59,7 @@ fun UsuarioDto.aModelo(): Usuario{
     return Usuario(
 
 
-        id = id,
+        id = this.id ?: "",
         rut = rut,
         nombre = nombre,
         apellido = apellido,
@@ -90,7 +90,7 @@ fun UsuarioDto.aModelo(): Usuario{
 
 fun Usuario.aDto(): UsuarioDto {
     return UsuarioDto(
-        id = id,
+        id = if (this.id.isBlank()) null else this.id, // Enviar null si es nuevo
         rut = rut,
         nombre = nombre,
         apellido = apellido,

@@ -231,7 +231,7 @@ fun FormularioUsuarioScreen(
                         else -> {
                             // Todo válido, creamos el objeto
                             val usuario = Usuario(
-                                id = usuarioExistente?.id ?: 0,
+                                id = usuarioExistente?.id ?: "",
                                 rut = rut, nombre = nombre, apellido = apellido,
                                 fechaNacimiento = fechaNacimientoSeleccionada!!, // Seguro porque validamos null arriba
                                 username = username, email = email,

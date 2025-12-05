@@ -17,7 +17,7 @@ data class ItemCarrito(
 }
 
 
-fun ItemCarrito.toDetalleEntity(ordenId: Long): DetalleOrdenEntity {
+fun ItemCarrito.toDetalleEntity(ordenId: String): DetalleOrdenEntity {
     return DetalleOrdenEntity(
         ordenId = ordenId, // Usamos el ID temporal o 0
         productoId = this.producto.id,

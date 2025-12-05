@@ -15,7 +15,7 @@ import java.util.Date
  *
  */
 data class Usuario(
-    val id: Int = 0,
+    val id: String = "",
     val rut: String,
     val nombre: String,
     val apellido: String,

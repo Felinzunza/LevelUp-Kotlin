@@ -20,31 +20,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.levelUpKotlinProject.domain.model.EstadoOrden
 import com.example.levelUpKotlinProject.domain.model.ItemOrden
-import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.OrdenViewModel
-import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleOrdenScreen(
-    ordenId: Long,
-    viewModel: OrdenViewModel, // ✅ Usamos el ViewModel en vez de los Repositorios
+    ordenId: String, // ✅ CAMBIO: De Long a String
+    viewModel: OrdenViewModel,
     onVolverClick: () -> Unit
 ) {
     // 1. Cargar los datos al abrir la pantalla
     LaunchedEffect(ordenId) {
-        viewModel.cargarDetalleOrden(ordenId)
+        viewModel.cargarDetalleOrden(ordenId) // Asegúrate de que el ViewModel acepte String aquí también
     }
 
     // 2. Observar el estado del ViewModel
     val orden = viewModel.ordenSeleccionada
 
-    // ... (Resto del código) ...
-
-
     // Estados para el menú desplegable
     var menuExpandido by remember { mutableStateOf(false) }
-    val estadosPosibles = listOf("PENDIENTE", "PAGADO", "ENVIADO", "ENTREGADO", "CANCELADO")
 
     Scaffold(
         topBar = {
@@ -117,7 +111,8 @@ fun DetalleOrdenScreen(
                                             text = { Text(estadoEnum.displayString) },
                                             onClick = {
                                                 // 2. Enviamos el NOMBRE técnico ("EN_PREPARACION") a la BD
-                                                viewModel.actualizarEstadoOrden(orden.id.toLong(), estadoEnum.name)
+                                                // ✅ CAMBIO: Usamos el ID como String (asumiendo que orden.id ya es String en tu modelo actualizado)
+                                                viewModel.actualizarEstadoOrden(orden.id, estadoEnum.name)
                                                 menuExpandido = false
                                             }
                                         )

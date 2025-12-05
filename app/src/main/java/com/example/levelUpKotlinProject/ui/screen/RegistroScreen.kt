@@ -252,8 +252,8 @@ fun RegistroScreen(
                     if (viewModel.esFormularioValido() && nombrePila.isNotBlank() && apellido.isNotBlank() && username.isNotBlank()) {
 
                         val nuevoUsuario = Usuario(
-                            // IMPORTANTE: id = 0 indica a Room (y a JSON Server) que es un NUEVO usuario
-                            id = 0,
+                            // IMPORTANTE: id = "" indica a Room (y a JSON Server) que es un NUEVO usuario
+                            id = "",
 
                             rut = uiState.formulario.rut,
 

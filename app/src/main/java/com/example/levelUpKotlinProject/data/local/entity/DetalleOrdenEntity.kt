@@ -19,7 +19,7 @@ import com.example.levelUpKotlinProject.domain.model.ItemOrden
     indices = [Index(value = ["ordenId"])]
 )
 data class DetalleOrdenEntity(
-    val ordenId: Long,
+    val ordenId: String,
 
     // CAMBIO: Ahora es String
     val productoId: String,

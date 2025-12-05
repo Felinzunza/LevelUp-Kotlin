@@ -24,16 +24,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
 
-/**
- * ViewModel que gestiona la lógica de UI
- * AndroidViewModel provee Context para Database
- */
-class CarritoViewModel(application: Application,
-                       private val carritoRepository: CarritoRepository,
-                       private val ordenRepository: OrdenRepository
+class CarritoViewModel(
+    application: Application,
+    private val carritoRepository: CarritoRepository,
+    private val ordenRepository: OrdenRepository
 ) : AndroidViewModel(application) {
 
-    // Repository
     private val repository: CarritoRepository
 
     init {
@@ -42,70 +38,22 @@ class CarritoViewModel(application: Application,
         repository = CarritoRepository(dao)
     }
 
-    // StateFlow para productos disponibles (hardcoded para este lab)
+    // ✅ RESTAURADO: Lista de productos disponibles (necesaria para que compile tu UI)
+    // Ajustado a IDs String para ser compatible con tu nuevo modelo.
     val productosDisponibles = listOf(
-        Producto(
-            id = "1",
-            nombre = "Mouse Gamer", 
-            descripcion = "Mouse óptico RGB con 6 botones", 
-            precio = 25000.0, 
-            imagenUrl = "", 
-            categoria = "Periféricos", 
-            stock = 10
-        ),
-        Producto(
-            id = "2",
-            nombre = "Teclado Mecánico", 
-            descripcion = "Teclado mecánico RGB retroiluminado", 
-            precio = 45000.0, 
-            imagenUrl = "", 
-            categoria = "Periféricos", 
-            stock = 5
-        ),
-        Producto(
-            id = "3",
-            nombre = "Audífonos RGB", 
-            descripcion = "Audífonos gaming con micrófono", 
-            precio = 35000.0, 
-            imagenUrl = "", 
-            categoria = "Audio", 
-            stock = 8
-        )
+        Producto(id = "1", nombre = "Mouse Gamer", descripcion = "Mouse óptico RGB", precio = 25000.0, imagenUrl = "mouse_gamer", categoria = "Periféricos", stock = 10),
+        Producto(id = "2", nombre = "Teclado Mecánico", descripcion = "Teclado RGB", precio = 45000.0, imagenUrl = "teclado_mecanico", categoria = "Periféricos", stock = 5),
+        Producto(id = "3", nombre = "Audífonos RGB", descripcion = "Audífonos gaming", precio = 35000.0, imagenUrl = "audifonos_rgb", categoria = "Audio", stock = 8)
     )
 
-    // StateFlow para items en carrito (observa cambios en Room)
+    // StateFlow para items en carrito
     val itemsCarrito: StateFlow<List<ItemCarrito>> = repository.obtenerCarrito()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    init {
-        // Observer para logear cambios en el carrito
-        viewModelScope.launch {
-            itemsCarrito.collect { items ->
-                Log.d("CARRITO_DB", "═══════════════════════════════")
-                Log.d("CARRITO_DB", "Items en carrito: ${items.size}")
-                items.forEachIndexed { index, item ->
-                    Log.d("CARRITO_DB", "${index + 1}. ${item.producto.nombre} x${item.cantidad} - Subtotal: \$${item.subtotal.toInt()}")
-                }
-                Log.d("CARRITO_DB", "═══════════════════════════════")
-            }
-        }
-    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // StateFlow para total del carrito
     val totalCarrito: StateFlow<Double> = repository.obtenerTotal()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0.0
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
-    /**
-     * Agrega un producto al carrito
-     */
     fun agregarAlCarrito(producto: Producto) {
         viewModelScope.launch {
             Log.d("CARRITO_DB", "➕ Agregando: ${producto.nombre}")
@@ -113,9 +61,6 @@ class CarritoViewModel(application: Application,
         }
     }
 
-    /**
-     * Vacía el carrito completo
-     */
     fun vaciarCarrito() {
         viewModelScope.launch {
             Log.d(" CARRITO_DB", " Vaciando carrito completo")
@@ -123,6 +68,7 @@ class CarritoViewModel(application: Application,
         }
     }
 
+    // Lógica de compra con IDs String
     suspend fun finalizarCompra(
         rutCliente: String,
         nombreCliente: String,
@@ -135,58 +81,49 @@ class CarritoViewModel(application: Application,
         totalPagar: Double
     ) {
         try {
-            // 1. OBTENER ITEMS DEL CARRITO DE FORMA SÍNCRONA
-            val itemsCarrito: List<ItemCarrito> = carritoRepository.obtenerCarrito().first()
+            val items = carritoRepository.obtenerCarrito().first()
+            if (items.isEmpty()) throw IllegalStateException("Carrito vacío")
 
-            if (itemsCarrito.isEmpty()) {
-                throw IllegalStateException("El carrito está vacío, no se puede generar la orden.")
-            }
-
-            // 2. CREAR LA CABECERA (OrdenEntity) - Ahora las variables son visibles
+            // 1. Crear cabecera con ID String vacío ("") para indicar nueva orden
             val ordenCabecera = OrdenEntity(
-                rutCliente = rutCliente, // ✅ Visible (es un parámetro)
-                nombreCliente = nombreCliente, // ✅ Visible (es un parámetro)
+                id = "",
+                rutCliente = rutCliente,
+                nombreCliente = nombreCliente,
                 fechaCreacion = Date().time,
-                direccion = direccionEnvio, // ✅ Visible (es un parámetro)
+                direccion = direccionEnvio,
                 tipoCourier = courier.name,
-                estado = EstadoOrden.EN_PREPARACION.name, // El estado es fijo/derivado
+                estado = EstadoOrden.EN_PREPARACION.name,
                 tipoCompra = metodoPago.name,
                 subtotal = subtotal,
                 descuento = descuento,
                 costoEnvio = costoEnvio,
-                totalPagar = totalPagar // ✅ Visible (es un parámetro)
+                totalPagar = totalPagar
             )
 
-            // ... (El resto de la lógica de mapeo y transacción)
-            val detalles: List<DetalleOrdenEntity> = itemsCarrito.map { item ->
-                item.toDetalleEntity(ordenId = 0)
+            // 2. Mapear detalles con ID String vacío
+            val detalles: List<DetalleOrdenEntity> = items.map { item ->
+                item.toDetalleEntity(ordenId = "")
             }
 
+            // 3. Finalizar transacción
             ordenRepository.finalizarCompraTransaccional(ordenCabecera, detalles)
 
         } catch (e: Exception) {
-            // ... (Manejo de errores)
             throw e
         }
     }
-
-
 }
 
 class CarritoViewModelFactory(
-    private val application: Application, // 👈 1. Aceptar la Application
+    private val application: Application,
     private val carritoRepository: CarritoRepository,
     private val ordenRepository: OrdenRepository
 ) : ViewModelProvider.Factory {
-
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        // Verifica que la clase solicitada sea CarritoViewModel
         if (modelClass.isAssignableFrom(CarritoViewModel::class.java)) {
-            // 👈 2. Pasar los TRES argumentos en el orden correcto
             return CarritoViewModel(application, carritoRepository, ordenRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-
