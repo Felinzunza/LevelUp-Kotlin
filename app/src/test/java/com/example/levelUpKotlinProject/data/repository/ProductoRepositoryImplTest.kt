@@ -9,7 +9,6 @@ import org.junit.Assert.*
 /**
  * Tests unitarios simples para ProductoRepositoryImpl - Optimizados para educación
  * 
- * Autor: Prof. Sting Adams Parra Silva
  */
 class ProductoRepositoryImplTest {
 

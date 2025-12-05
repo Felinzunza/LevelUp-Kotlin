@@ -1,5 +1,6 @@
 package com.example.levelUpKotlinProject.ui.viewmodel
 
+import com.example.levelUpKotlinProject.domain.model.Producto
 import com.example.levelUpKotlinProject.ui.state.ProductoUiState
 import org.junit.Test
 import org.junit.Assert.*
@@ -26,7 +27,7 @@ class ProductoViewModelTest {
     fun `ProductoUiState - con productos funciona correctamente`() {
         // Test con productos
         val productos = listOf(
-            com.example.levelUpKotlinProject.domain.model.Producto(
+            Producto(
                 id = "1",
                 nombre = "Mouse",
                 descripcion = "Mouse gamer",
@@ -84,7 +85,7 @@ class ProductoViewModelTest {
         // Test de copia de estado
         val uiStateOriginal = ProductoUiState(
             productos = listOf(
-                com.example.levelUpKotlinProject.domain.model.Producto(
+                Producto(
                     id = "1",
                     nombre = "Mouse Original",
                     descripcion = "Descripción original",
