@@ -2,9 +2,11 @@ package com.example.levelUpKotlinProject.ui.screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -19,59 +21,49 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.levelUpKotlinProject.data.local.PreferenciasManager
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.domain.model.ItemCarrito
 import com.example.levelUpKotlinProject.domain.model.TipoCompra
 import com.example.levelUpKotlinProject.domain.model.TipoCourier
+import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
 import com.example.levelUpKotlinProject.ui.navigation.Rutas
 import com.example.levelUpKotlinProject.ui.viewmodel.CarritoViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavHostController
-import com.example.levelUpKotlinProject.data.local.PreferenciasManager
-import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
-
-// --- PANTALLA PRINCIPAL: CarritoScreen (Ahora maneja Checkout) ---
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarritoScreen(
     navController: NavHostController,
-    viewModel: CarritoViewModel, // Inyectado para la lógica de compra
+    viewModel: CarritoViewModel,
     carritoRepository: CarritoRepository,
     onVolverClick: () -> Unit,
     onProductoClick: (String) -> Unit,
     preferenciasManager: PreferenciasManager,
     onIrALogin: () -> Unit
 ) {
-    // 1. LÓGICA REACTIVA EXISTENTE DEL CARRITO
+    // 1. LÓGICA REACTIVA
     val itemsCarrito by carritoRepository.obtenerCarrito().collectAsState(initial = emptyList())
     val total by carritoRepository.obtenerTotal().collectAsState(initial = 0.0)
     val scope = rememberCoroutineScope()
 
-    // 2. ESTADOS DE FORMULARIO DE CHECKOUT (Se usan para el botón final)
+    // 2. ESTADOS DE FORMULARIO
     var region by remember { mutableStateOf("") }
     var comuna by remember { mutableStateOf( "") }
     val rutUsuarioLogueado = preferenciasManager.obtenerRutUsuario()
     val nombreUsuario = preferenciasManager.obtenerNombreUsuario() ?: "Cliente"
     val direccionState = remember { mutableStateOf("") }
     val direccionCompleta = "${direccionState.value}, $comuna, $region"
-    val emailUsuario = preferenciasManager.obtenerEmailUsuario() ?: "Invitado"
     val courierState = remember { mutableStateOf(TipoCourier.CORREOS_CHILE) }
     val metodoPagoState = remember { mutableStateOf(TipoCompra.TARJETA_DEBITO) }
 
-    // 3. DATOS DE SESIÓN Y TOTALES (Cálculo del total final)
-
-    val subtotal = total // Asumimos que el total del carrito es el subtotal
-    val costoEnvio = if (total > 0) 5.0 else 0.0 // Envío fijo si hay productos
+    // 3. TOTALES
+    val subtotal = total
+    val costoEnvio = if (total > 0) 5.0 else 0.0
     val totalPagar = total + costoEnvio
 
     Scaffold(
@@ -93,7 +85,6 @@ fun CarritoScreen(
             )
         },
         bottomBar = {
-            // Barra de total y botón de compra final
             if (itemsCarrito.isNotEmpty()) {
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
@@ -106,7 +97,6 @@ fun CarritoScreen(
                         ) {
                             Text("TOTAL:", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                // Usa el total final, incluyendo el envío
                                 text = formatearPrecio(totalPagar),
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
@@ -115,7 +105,6 @@ fun CarritoScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 💥 BOTÓN DE ACCIÓN FINAL 💥
                         BotonFinalizarCompra(
                             viewModel = viewModel,
                             coroutineScope = scope,
@@ -125,7 +114,7 @@ fun CarritoScreen(
                                 }
                             },
                             rutCliente = rutUsuarioLogueado,
-                            nombreCliente = nombreUsuario, //
+                            nombreCliente = nombreUsuario,
                             direccion = direccionCompleta,
                             metodoPago = metodoPagoState.value,
                             courier = courierState.value,
@@ -134,23 +123,20 @@ fun CarritoScreen(
                             totalPagar = totalPagar,
                             preferenciasManager = preferenciasManager,
                             onIrALogin = onIrALogin
-
                         )
                     }
                 }
             }
         }
     ) { paddingValues ->
-        // Contenido principal (Lista de items y Formularios de Checkout)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState()), // Permite scroll en toda la página
+                .verticalScroll(rememberScrollState()), // Scroll global activado
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (itemsCarrito.isEmpty()) {
-                // Carrito vacío
                 Column(
                     modifier = Modifier.fillMaxSize().padding(top = 100.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -161,27 +147,34 @@ fun CarritoScreen(
                     Button(onClick = onVolverClick) { Text("Ir a comprar") }
                 }
             } else {
-                // Lista de productos
-                LazyColumn(
+                // ✅ CORRECCIÓN: Usamos Column en lugar de LazyColumn.
+                // Esto permite que la lista se expanda completamente y use el scroll de la pantalla (parent).
+                // Así puedes ver todos los productos, no solo 3.
+                Column(
                     modifier = Modifier
-                        .heightIn(max = 500.dp) // Restringe la altura
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    userScrollEnabled = false
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(itemsCarrito) { item ->
+                    itemsCarrito.forEach { item ->
                         CarritoItemCard(
                             item = item,
-                            onCantidadChange = { nuevaCantidad -> scope.launch { carritoRepository.modificarCantidad(item.producto.id, nuevaCantidad) } },
-                            onEliminarClick = { scope.launch { carritoRepository.eliminarProducto(item.producto.id) } },
+                            onCantidadChange = { nuevaCantidad ->
+                                scope.launch { carritoRepository.modificarCantidad(item.producto.id, nuevaCantidad) }
+                            },
+                            onEliminarClick = {
+                                scope.launch { carritoRepository.eliminarProducto(item.producto.id) }
+                            },
                             onClick = { onProductoClick(item.producto.id) }
                         )
                     }
                 }
 
-                // 💥 FORMULARIOS DE CHECKOUT 💥
+                // FORMULARIOS DE CHECKOUT
                 Column(modifier = Modifier.padding(16.dp)) {
+                    Divider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text("Detalles de Pago y Envío", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -194,24 +187,24 @@ fun CarritoScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-
-
                     SelectorRegionComuna(
                         regionSeleccionada = region,
                         comunaSeleccionada = comuna,
                         onRegionChange = { nuevaRegion ->
                             region = nuevaRegion
-                            comuna = "" // 🧹 ¡LIMPIEZA MANUAL AQUÍ!
+                            comuna = ""
                         },
                         onComunaChange = { nuevaComuna ->
                             comuna = nuevaComuna
                         }
                     )
 
+                    Spacer(modifier = Modifier.height(16.dp))
                     CourierSelector(courierState.value) { courierState.value = it }
-                    Spacer(modifier = Modifier.height(24.dp))
 
+                    Spacer(modifier = Modifier.height(24.dp))
                     MetodoPagoSelector(metodoPagoState.value) { metodoPagoState.value = it }
+
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
@@ -219,13 +212,8 @@ fun CarritoScreen(
     }
 }
 
-// ---------------------------------------------------------------------
-// --- FUNCIONES AUXILIARES (Definidas UNA SOLA VEZ) ---
-// ---------------------------------------------------------------------
+// --- FUNCIONES AUXILIARES ---
 
-/**
- * Función helper para formatear precio (Separador de miles y símbolo $)
- */
 fun formatearPrecio(precio: Double): String {
     val precioEntero = precio.toInt()
     return "$${precioEntero.toString().reversed().chunked(3).joinToString(".").reversed()}"
@@ -252,11 +240,12 @@ fun CarritoItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val context = LocalContext.current
-            val imageResId = context.resources.getIdentifier(
-                item.producto.imagenUrl,
-                "drawable",
-                context.packageName
-            )
+            // Intentamos cargar recurso local, si falla usamos 0
+            val imageResId = try {
+                if(item.producto.imagenUrl.isNotEmpty())
+                    context.resources.getIdentifier(item.producto.imagenUrl, "drawable", context.packageName)
+                else 0
+            } catch (e: Exception) { 0 }
 
             AsyncImage(
                 model = ImageRequest.Builder(context)
@@ -289,42 +278,28 @@ fun CarritoItemCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     IconButton(
-                        onClick = {
-                            if (item.cantidad > 1) {
-                                onCantidadChange(item.cantidad - 1)
-                            }
-                        },
+                        onClick = { if (item.cantidad > 1) onCantidadChange(item.cantidad - 1) },
                         modifier = Modifier.size(32.dp),
                         enabled = item.cantidad > 1
                     ) {
                         Text(
                             text = "-",
-                            fontSize = 22.sp, // Tamaño grande para que parezca ícono
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
-                            // Aplicamos el color (deshabilitado o primario)
-                            color = if (item.cantidad > 1)
-                                MaterialTheme.colorScheme.secondary
-                            else
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            color = if (item.cantidad > 1) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                         )
                     }
                     Text(
                         text = "${item.cantidad}",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .widthIn(min = 30.dp)
-                            .wrapContentWidth(Alignment.CenterHorizontally)
+                        modifier = Modifier.widthIn(min = 30.dp).wrapContentWidth(Alignment.CenterHorizontally)
                     )
                     IconButton(
                         onClick = { onCantidadChange(item.cantidad + 1) },
                         modifier = Modifier.size(32.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Aumentar",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
+                        Icon(Icons.Default.Add, "Aumentar", tint = MaterialTheme.colorScheme.secondary)
                     }
                 }
                 Text(
@@ -335,11 +310,7 @@ fun CarritoItemCard(
                 )
             }
             IconButton(onClick = onEliminarClick) {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = "Eliminar producto",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Icon(Icons.Filled.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -385,11 +356,12 @@ fun CourierSelector(selectedCourier: TipoCourier, onCourierSelected: (TipoCourie
 @Composable
 fun MetodoPagoSelector(selectedPago: TipoCompra, onPagoSelected: (TipoCompra) -> Unit) {
     Column(modifier = Modifier.selectableGroup()) {
+        Text("Método de Pago", style = MaterialTheme.typography.titleSmall)
         TipoCompra.entries.forEach { tipo ->
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(48.dp)
                     .selectable(
                         selected = (tipo == selectedPago),
                         onClick = { onPagoSelected(tipo) },
@@ -413,53 +385,35 @@ fun MetodoPagoSelector(selectedPago: TipoCompra, onPagoSelected: (TipoCompra) ->
 }
 
 @Composable
-fun ResumenFila(titulo: String, valor: String, isTotal: Boolean = false) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(titulo, fontWeight = if (isTotal) FontWeight.Bold else FontWeight.Normal, fontSize = if (isTotal) 18.sp else 16.sp)
-        Text(valor, fontWeight = if (isTotal) FontWeight.Bold else FontWeight.Normal, fontSize = if (isTotal) 18.sp else 16.sp)
-    }
-}
-
-@Composable
 fun BotonFinalizarCompra(
     viewModel: CarritoViewModel,
     coroutineScope: CoroutineScope,
     onCompraExitosa: () -> Unit,
     rutCliente: String,
-    nombreCliente: String, //
+    nombreCliente: String,
     direccion: String,
     metodoPago: TipoCompra,
     courier: TipoCourier,
     subtotal: Double,
     costoEnvio: Double,
     totalPagar: Double,
-    // 👇 NUEVOS PARÁMETROS 👇
     preferenciasManager: PreferenciasManager,
     onIrALogin: () -> Unit
 ) {
     Button(
         onClick = {
-            //LÓGICA DE PROTECCIÓN: Verificar sesión
             if (!preferenciasManager.estaUsuarioLogueado()) {
-                // Si es invitado, lo mandamos al login y detenemos la compra
                 onIrALogin()
                 return@Button
             }
-
-            // 2. Validaciones normales (Solo si está logueado)
             if (direccion.isBlank()) {
-                println("Error: La dirección no puede estar vacía.")
                 return@Button
             }
 
-            // 3. Ejecutar compra
             coroutineScope.launch {
                 try {
                     viewModel.finalizarCompra(
-                        rutCliente = rutCliente, // Aquí podrías usar el email del usuario real si quisieras
+                        rutCliente = rutCliente,
                         nombreCliente= nombreCliente,
                         direccionEnvio = direccion,
                         metodoPago = metodoPago,
@@ -472,19 +426,17 @@ fun BotonFinalizarCompra(
                     onCompraExitosa()
 
                 } catch (e: Exception) {
-                    println("Error en la transacción: ${e.message}")
+                    e.printStackTrace()
                 }
             }
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().height(50.dp)
     ) {
-        // Cambio visual del texto del botón
         val texto = if (preferenciasManager.estaUsuarioLogueado())
-            "PAGAR Y CONFIRMAR ORDEN (${totalPagar.toInt()} CLP)"
+            "PAGAR ${formatearPrecio(totalPagar)}"
         else
             "INICIAR SESIÓN PARA COMPRAR"
 
-        Text(texto)
+        Text(texto, fontWeight = FontWeight.Bold)
     }
 }
-

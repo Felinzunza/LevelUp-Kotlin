@@ -3,12 +3,15 @@ package com.example.levelUpKotlinProject.ui.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,8 +42,31 @@ fun HomeScreen(
     estaLogueado: Boolean,
     nombreUsuario: String?
 ) {
+    // Datos originales
     val productos by productoRepository.obtenerProductos().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
+
+    // Estado para el Snackbar (Mensaje emergente)
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // --- ESTADOS DE FILTRO ---
+    var textoBusqueda by remember { mutableStateOf("") }
+    var categoriaSeleccionada by remember { mutableStateOf<String?>(null) }
+
+    // Calculamos las categorías disponibles dinámicamente
+    val categorias = remember(productos) {
+        listOf("Todos") + productos.map { it.categoria }.distinct().sorted()
+    }
+
+    // Lógica de Filtrado
+    val productosFiltrados = remember(productos, textoBusqueda, categoriaSeleccionada) {
+        productos.filter { producto ->
+            val coincideNombre = producto.nombre.contains(textoBusqueda, ignoreCase = true)
+            val coincideCategoria = categoriaSeleccionada == null || categoriaSeleccionada == "Todos" || producto.categoria == categoriaSeleccionada
+
+            coincideNombre && coincideCategoria
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -56,26 +82,85 @@ fun HomeScreen(
                     IconButton(onClick = onCarritoClick) { Icon(Icons.Default.ShoppingCart, "Carrito") }
                 }
             )
-        }
+        },
+        // Agregamos el Host del Snackbar aquí
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
-        if (productos.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(150.dp),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(padding)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // 1. BARRA DE BÚSQUEDA
+            OutlinedTextField(
+                value = textoBusqueda,
+                onValueChange = { textoBusqueda = it },
+                label = { Text("Buscar producto...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                singleLine = true
+            )
+
+            // 2. FILTRO DE CATEGORÍAS (CHIPS)
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 8.dp)
             ) {
-                items(productos) { producto ->
-                    ProductoCard(
-                        producto = producto,
-                        onClick = { onProductoClick(producto.id) },
-                        onAgregarAlCarrito = { scope.launch { carritoRepository.agregarProducto(producto) } }
+                items(categorias) { categoria ->
+                    val selected = (categoria == "Todos" && categoriaSeleccionada == null) || categoria == categoriaSeleccionada
+
+                    FilterChip(
+                        selected = selected,
+                        onClick = {
+                            categoriaSeleccionada = if (categoria == "Todos") null else categoria
+                        },
+                        label = { Text(categoria) }
                     )
+                }
+            }
+
+            Divider()
+
+            // 3. LISTA DE PRODUCTOS
+            if (productosFiltrados.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (productos.isEmpty()) {
+                        CircularProgressIndicator() // Cargando inicial
+                    } else {
+                        Text("No se encontraron productos", color = Color.Gray)
+                    }
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(150.dp),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(productosFiltrados) { producto ->
+                        ProductoCard(
+                            producto = producto,
+                            onClick = { onProductoClick(producto.id) },
+                            onAgregarAlCarrito = {
+                                scope.launch {
+                                    carritoRepository.agregarProducto(producto)
+                                    // Mostramos el mensaje
+                                    snackbarHostState.showSnackbar(
+                                        message = "${producto.nombre} agregado al carrito",
+                                        duration = SnackbarDuration.Short,
+                                        withDismissAction = true
+                                    )
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -90,7 +175,6 @@ fun ProductoCard(
 ) {
     val context = LocalContext.current
 
-    // --- LÓGICA DE IMAGEN SEGURA ---
     val resourceId = remember(producto.imagenUrl) {
         try {
             if (producto.imagenUrl.isNotBlank()) {
@@ -101,29 +185,39 @@ fun ProductoCard(
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
-            // Protección: Solo usamos painterResource si el ID es válido (distinto de 0)
-            if (resourceId != 0) {
-                Image(
-                    painter = painterResource(id = resourceId),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(120.dp)
-                )
-            } else {
-                // Fallback: Cuadro gris si la imagen falla
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (resourceId != 0) {
+                    Image(
+                        painter = painterResource(id = resourceId),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
                     Text("Sin Imagen", color = Color.Gray, fontSize = 12.sp)
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = producto.nombre, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text(text = "$${producto.precio.toInt()}", color = MaterialTheme.colorScheme.primary)
+            Text(
+                text = producto.nombre,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                style = MaterialTheme.typography.titleSmall
+            )
+            Text(
+                text = "$${producto.precio.toInt()}",
+                color = MaterialTheme.colorScheme.secondary,
+                fontWeight = FontWeight.Bold
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
             Button(

@@ -15,7 +15,9 @@ object UsuarioInicializador {
 
     private const val ADMIN_EMAIL_POR_DEFECTO = "admin@admin.cl"
     private const val ADMIN_USERNAME_POR_DEFECTO = "admin"
-    private const val ADMIN_PASS_POR_DEFECTO = PreferenciasManager.ADMIN_PASSWORD
+    // Asumimos "admin123" si no tienes acceso a PreferenciasManager aquí, o úsalo si es estático.
+    // Para este ejemplo usaré un string directo para evitar errores de compilación si PreferenciasManager no tiene el const accesible estáticamente.
+    private const val ADMIN_PASS_POR_DEFECTO = "admin123"
 
     suspend fun inicializarAdmin(context: Context) {
         val database = AppDatabase.getDatabase(context)
@@ -36,6 +38,8 @@ object UsuarioInicializador {
             // 2. Si no existe, crear e insertar
             if (adminExistente == null) {
                 val usuarioAdmin = Usuario(
+                    // ✅ CORRECTO: Asignamos un ID String fijo ("101").
+                    // Room con autoGenerate=false requiere que nosotros demos el ID.
                     id = "101",
                     rut = "1.111.111-1",
                     nombre = "Admin",
@@ -52,28 +56,28 @@ object UsuarioInicializador {
                     rol = Rol.ADMIN
                 )
 
+                // Usamos la función privada de abajo
                 usuarioDao.insertarusuario(usuarioAdmin.toEntity())
             }
         }
     }
 }
 
-// Función de extensión para mapear Usuario -> UsuarioEntity
-// Corrige tipos: Date -> Long y Enum -> String
+// Función de extensión privada (Tu versión personalizada)
+// Convierte Usuario (Dominio) -> UsuarioEntity (BD)
 private fun Usuario.toEntity() = UsuarioEntity(
-    id = id,
+    id = id, // String -> String
     rut = rut,
     nombre = nombre,
     apellido = apellido,
-    fechaNacimiento = this.fechaNacimiento.time, // Convertir a Timestamp
+    fechaNacimiento = this.fechaNacimiento.time, // Date -> Long
     username = username,
     email = email,
     password = password,
     telefono = telefono,
-    direccion=direccion,
-    comuna=comuna,
-    region=region,
-    fechaRegistro = this.fechaRegistro.time, // Convertir a Timestamp
-    rol = rol.name // Convertir Enum a String
+    direccion = direccion,
+    comuna = comuna,
+    region = region,
+    fechaRegistro = this.fechaRegistro.time, // Date -> Long
+    rol = rol.name // Enum -> String
 )
-

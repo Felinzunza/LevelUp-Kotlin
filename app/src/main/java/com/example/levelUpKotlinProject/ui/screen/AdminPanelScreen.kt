@@ -55,9 +55,9 @@ fun AdminPanelScreen(
                 title = {
                     Column {
                         Text("Panel Admin",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.secondary
-                             )
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
                         Text(
                             text = "Sesión: $usernameAdmin",
                             fontSize = 12.sp,
@@ -75,53 +75,21 @@ fun AdminPanelScreen(
                 }
             )
         },
-        floatingActionButton = {
-
-            if(pestanaSeleccionada == 0){
-                FloatingActionButton(
-                    onClick = onAgregarUsuario,
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "Agregar Usuario"
-                    )
-                }
-
-            }
-
-
-            if (pestanaSeleccionada == 1) {
-                FloatingActionButton(
-                    onClick = onAgregarProducto,
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "Agregar Producto"
-                    )
-                }
-            }
-        }
+        // 🛑 CAMBIO: Eliminado el FloatingActionButton para que no tape contenido
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-
-
         ) {
             // Pestañas
             TabRow(selectedTabIndex = pestanaSeleccionada) {
-
                 Tab(
                     selected = pestanaSeleccionada == 0,
                     onClick = { pestanaSeleccionada = 0 },
                     text = { Text("Usuarios", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary) },
                     icon = { Icon(Icons.Filled.Face, null, tint = MaterialTheme.colorScheme.secondary)},
                 )
-
-
                 Tab(
                     selected = pestanaSeleccionada == 1,
                     onClick = { pestanaSeleccionada = 1 },
@@ -142,33 +110,40 @@ fun AdminPanelScreen(
                     text = { Text("Estadísticas", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary) },
                     icon = { Icon(Icons.Filled.Info, null, tint = MaterialTheme.colorScheme.secondary) }
                 )
-
-
             }
 
             // Contenido según pestaña
             when (pestanaSeleccionada) {
                 0 -> {
                     // Contenido: Lista de Usuarios
-                    if(usuarios.isEmpty()){
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("No hay usuarios registrados", fontSize = 18.sp)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(onClick = onAgregarUsuario) {
-                                    Text("Agregar Primero")
-                                }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // ✅ CAMBIO: Botón Agregar al principio de la lista
+                        item {
+                            Button(
+                                onClick = onAgregarUsuario,
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Agregar Nuevo Usuario")
                             }
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+
+                        if(usuarios.isEmpty()){
+                            item {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("No hay usuarios registrados", fontSize = 16.sp, color = MaterialTheme.colorScheme.outline)
+                                }
+                            }
+                        } else {
                             items(usuarios, key = { it.id }) { usuario ->
                                 AdminUsuarioCard(
                                     usuario = usuario,
@@ -181,25 +156,34 @@ fun AdminPanelScreen(
                 }
                 1 -> {
                     // Lista de productos
-                    if (productos.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("No hay productos", fontSize = 18.sp)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(onClick = onAgregarProducto) {
-                                    Text("Agregar Primero")
-                                }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // ✅ CAMBIO: Botón Agregar al principio de la lista
+                        item {
+                            Button(
+                                onClick = onAgregarProducto,
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Agregar Nuevo Producto")
                             }
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+
+                        if (productos.isEmpty()) {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("No hay productos", fontSize = 16.sp, color = MaterialTheme.colorScheme.outline)
+                                }
+                            }
+                        } else {
                             items(productos) { producto ->
                                 AdminProductoCard(
                                     producto = producto,
@@ -290,7 +274,7 @@ fun AdminProductoCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp,
         ),
         colors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
         Row(
@@ -528,7 +512,7 @@ fun EstadisticasPanel(productos: List<Producto>, ordenes: List<Orden>) {
         // Valor inventario
         EstadisticaCard(
             titulo = "Valor Inventario",
-            valor = "$${productos.sumOf { it.precio * it.stock }.toString()}",
+            valor = "$${productos.sumOf { it.precio * it.stock }.toInt()}",
             icono = Icons.Filled.Star
         )
 
@@ -577,4 +561,3 @@ fun EstadisticaCard(
         }
     }
 }
-
