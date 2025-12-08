@@ -23,6 +23,8 @@ class PreferenciasManager(context: Context) {
 
         // USUARIO KEYS
         private const val KEY_USUARIO_LOGUEADO = "usuario_logueado"
+
+        private const val KEY_ID_USUARIO = "id_usuario"
         private const val KEY_EMAIL_USUARIO = "email_usuario"
         private const val KEY_NOMBRE_USUARIO = "nombre_usuario"
         private const val KEY_RUT_USUARIO = "rut_usuario"
@@ -65,11 +67,13 @@ class PreferenciasManager(context: Context) {
     // --- GESTIÓN DE SESIÓN DE USUARIO (CLIENTE) ---
 
     // Esta función debe estar FUERA de las demás, al nivel de la clase
-    fun guardarSesionUsuario(email: String, nombre: String, rut: String) {
+    // 1. AÑADE el parámetro 'id' aquí
+    fun guardarSesionUsuario(id: String, email: String, nombre: String, rut: String) {
         prefs.edit().apply {
             putBoolean(KEY_USUARIO_LOGUEADO, true)
+            putString(KEY_ID_USUARIO, id)         // ✅ Guardamos el ID
             putString(KEY_EMAIL_USUARIO, email)
-            putString(KEY_NOMBRE_USUARIO, nombre)
+            putString(KEY_NOMBRE_USUARIO, nombre) // ✅ Guardamos el Nombre real para mostrarlo
             putString(KEY_RUT_USUARIO, rut)
             apply()
         }
@@ -91,9 +95,15 @@ class PreferenciasManager(context: Context) {
         return prefs.getString(KEY_RUT_USUARIO, "") ?: ""
     }
 
+    // 2. AÑADE esta función nueva para recuperar el ID
+    fun obtenerIdUsuario(): String? {
+        return prefs.getString(KEY_ID_USUARIO, null)
+    }
+
     fun cerrarSesionUsuario() {
         prefs.edit().apply {
             remove(KEY_USUARIO_LOGUEADO)
+            remove(KEY_ID_USUARIO) // ✅ Borramos ID
             remove(KEY_EMAIL_USUARIO)
             remove(KEY_NOMBRE_USUARIO)
             remove(KEY_RUT_USUARIO)

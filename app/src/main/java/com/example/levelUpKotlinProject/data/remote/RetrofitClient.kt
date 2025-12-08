@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // URL base de la API
-    private const val URL_BASE = "http://192.168.2.114:3000/" //cambiar ip del pc, ir a terminal y poner ipconfig de direccion ipv4, copiar ip y pegar y poner junto :3000/
+    private const val URL_BASE = "http://192.168.1.2:3000/" //cambiar ip del pc, ir a terminal y poner ipconfig de direccion ipv4, copiar ip y pegar y poner junto :3000/
 
     // Interceptor para ver peticiones en Logcat
     private val interceptorLog = HttpLoggingInterceptor().apply {

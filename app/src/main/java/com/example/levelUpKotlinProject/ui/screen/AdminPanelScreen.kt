@@ -1,8 +1,11 @@
 package com.example.levelUpKotlinProject.ui.screen
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
@@ -11,9 +14,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.example.levelUpKotlinProject.domain.model.Orden
 import com.example.levelUpKotlinProject.domain.model.Producto
 import com.example.levelUpKotlinProject.domain.model.Usuario
@@ -29,6 +35,9 @@ fun AdminPanelScreen(
     productos: List<Producto>,
     ordenes: List<Orden>,
 
+    usuarioAdmin: Usuario?,
+
+
     onAgregarUsuario: () -> Unit,
     onEditarUsuario: (Usuario) -> Unit,
     onEliminarUsuario: (Usuario) -> Unit,
@@ -41,6 +50,7 @@ fun AdminPanelScreen(
 
     onVerDetalleOrden: (String) -> Unit,
     onCambiarEstadoOrden: (ordenId: String, nuevoEstado: String) -> Unit,
+    onPerfilAdminClick: () -> Unit,
 ) {
 
     var mostrarDialogoEliminarUsuario by remember { mutableStateOf<Usuario?>(null) }
@@ -53,16 +63,47 @@ fun AdminPanelScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Panel Admin",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                        Text(
-                            text = "Sesión: $usernameAdmin",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // ✅ FOTO DE ADMIN
+                        // ✅ AQUÍ ESTÁ EL CAMBIO:
+                        // Reutilizamos la lógica del Home pero usando 'usuarioAdmin' y 'onPerfilAdminClick'
+                        IconButton(onClick = onPerfilAdminClick) {
+                            if (!usuarioAdmin?.fotoPerfil.isNullOrBlank()) {
+                                // CASO 1: Tiene foto
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = usuarioAdmin!!.fotoPerfil),
+                                    contentDescription = "Perfil Admin",
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                // CASO 2: No tiene foto (Icono por defecto)
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Perfil Admin",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Column {
+                            Text(
+                                "Panel Admin",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Text(
+                                text = "Sesión: ${usuarioAdmin?.username ?: "Admin"}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
                     }
                 },
                 actions = {

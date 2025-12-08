@@ -3,11 +3,8 @@ package com.example.levelUpKotlinProject.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.levelUpKotlinProject.data.repository.UsuarioRepository // AÑADIDO
-import com.example.levelUpKotlinProject.domain.model.Usuario // AÑADIDO
-import com.example.levelUpKotlinProject.domain.model.Rol // AÑADIDO
-import java.util.Date // AÑADIDO
-import com.example.levelUpKotlinProject.domain.validator.ValidadorFormulario
+import com.example.levelUpKotlinProject.data.repository.UsuarioRepository
+import com.example.levelUpKotlinProject.domain.model.Usuario
 import com.example.levelUpKotlinProject.ui.state.RegistroUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,231 +12,62 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * RegistroViewModel: Gestiona el formulario de registro
- */
-class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : ViewModel() { // MODIFICADO
+class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistroUiState())
     val uiState: StateFlow<RegistroUiState> = _uiState.asStateFlow()
 
     init {
-        // 🛑 CAMBIO IMPORTANTE: Escuchar cambios en tiempo real (Flow)
         cargarUsuariosEnTiempoReal()
     }
 
     private fun cargarUsuariosEnTiempoReal() {
         viewModelScope.launch {
-            // Al usar collect, cada vez que la tabla cambie (por el Inicializador o por agregar),
-            // esta lista se actualiza automáticamente.
             usuarioRepository.obtenerUsuarios().collect { listaUsuarios ->
-                _uiState.update { currentState ->
-                    currentState.copy(usuarios = listaUsuarios)
-                }
+                _uiState.update { it.copy(usuarios = listaUsuarios) }
             }
         }
     }
 
-    // Función para actualizar RUT
-    fun onRutChange(nuevoRut: String) {
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(rut = nuevoRut)
-        )
-    }
+    // Funciones de UI (Inputs)
+    fun onRutChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(rut = valor)) } }
+    fun onNombreChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(nombreCompleto = valor)) } }
+    fun onEmailChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(email = valor)) } }
+    fun onTelefonoChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(telefono = valor)) } }
+    fun onDireccionChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(direccion = valor)) } }
+    fun onPasswordChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(password = valor)) } }
+    fun onConfirmarPasswordChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(confirmarPassword = valor)) } }
+    fun onTerminosChange(valor: Boolean) { _uiState.update { it.copy(formulario = it.formulario.copy(aceptaTerminos = valor)) } }
+    fun onRegionChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(region = valor, comuna = "")) } }
+    fun onComunaChange(valor: String) { _uiState.update { it.copy(formulario = it.formulario.copy(comuna = valor)) } }
 
-
-
-
-
-
-
-    /**
-     * Actualiza el nombre completo y valida
-     */
-    fun onNombreChange(nombre: String) {
-        val errores = _uiState.value.errores.copy(
-            nombreCompletoError = ValidadorFormulario.validarNombreCompleto(nombre)
-        )
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(nombreCompleto = nombre),
-            errores = errores
-        )
-    }
-
-    /**
-     * Actualiza el email y valida formato
-     */
-    fun onEmailChange(email: String) {
-        val errores = _uiState.value.errores.copy(
-            emailError = ValidadorFormulario.validarEmail(email)
-        )
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(email = email),
-            errores = errores
-        )
-    }
-
-    /**
-     * Actualiza el teléfono y valida formato chileno
-     */
-    fun onTelefonoChange(telefono: String) {
-        val errores = _uiState.value.errores.copy(
-            telefonoError = ValidadorFormulario.validarTelefono(telefono)
-        )
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(telefono = telefono),
-            errores = errores
-        )
-    }
-
-    fun onRegionChange(nuevaRegion: String) {
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(
-                region = nuevaRegion,
-                comuna = "" // 🧹 ¡LIMPIEZA AUTOMÁTICA!
-            )
-        )
-    }
-
-    fun onComunaChange(nuevaComuna: String) {
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(comuna = nuevaComuna)
-        )
-    }
-
-    /**
-     * Actualiza la dirección y valida longitud mínima
-     */
-    fun onDireccionChange(nuevaDireccion: String) {
-        val errores = _uiState.value.errores.copy(
-            direccionError = ValidadorFormulario.validarDireccion(nuevaDireccion)
-        )
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(direccion = nuevaDireccion),
-            errores = errores
-        )
-    }
-
-    /**
-     * Actualiza la contraseña y valida requisitos de seguridad
-     */
-    fun onPasswordChange(password: String) {
-        val errores = _uiState.value.errores.copy(
-            passwordError = ValidadorFormulario.validarPassword(password)
-        )
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(password = password),
-            errores = errores
-        )
-    }
-
-    /**
-     * Actualiza confirmación de contraseña y valida que coincidan
-     */
-    fun onConfirmarPasswordChange(confirmarPassword: String) {
-        val errores = _uiState.value.errores.copy(
-            confirmarPasswordError = ValidadorFormulario.validarConfirmarPassword(
-                _uiState.value.formulario.password,
-                confirmarPassword
-            )
-        )
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(confirmarPassword = confirmarPassword),
-            errores = errores
-        )
-    }
-
-    /**
-     * Actualiza el checkbox de términos
-     */
-    fun onTerminosChange(acepta: Boolean) {
-        val errores = _uiState.value.errores.copy(
-            terminosError = ValidadorFormulario.validarTerminos(acepta)
-        )
-        _uiState.value = _uiState.value.copy(
-            formulario = _uiState.value.formulario.copy(aceptaTerminos = acepta),
-            errores = errores
-        )
-    }
-
-    /**
-     * Verifica si el formulario completo es válido
-     */
+    // VALIDACIÓN COMPLETA
     fun esFormularioValido(): Boolean {
         val form = _uiState.value.formulario
-        val errors = _uiState.value.errores
 
-        return form.nombreCompleto.isNotBlank() &&
-                form.email.isNotBlank() &&
-                form.telefono.isNotBlank() &&
-                form.region.isNotBlank() &&
-                form.comuna.isNotBlank() &&
-                form.direccion.isNotBlank() &&
-                form.password.isNotBlank() &&
-                form.confirmarPassword.isNotBlank() &&
-                form.aceptaTerminos &&
-                errors.nombreCompletoError == null &&
-                errors.emailError == null &&
-                errors.telefonoError == null &&
-                errors.direccionError == null &&
-                errors.passwordError == null &&
-                errors.confirmarPasswordError == null &&
-                errors.terminosError == null
+        // Reglas básicas (puedes agregar más)
+        val rutValido = form.rut.isNotBlank()
+        val nombreValido = form.nombreCompleto.isNotBlank()
+        val emailValido = form.email.contains("@")
+        val passValido = form.password.isNotBlank() && form.password == form.confirmarPassword
+        val terminos = form.aceptaTerminos
+
+        return rutValido && nombreValido && emailValido && passValido && terminos
     }
 
-    /**
-     * Intenta registrar al usuario (LÓGICA REAL IMPLEMENTADA Y CONSTRUCTOR CORREGIDO)
-     */
-
-    /**
-     * Registers a new user and executes a callback upon success.
-     */
+    // CRUD CON CALLBACK
     fun agregarUsuario(usuario: Usuario, onSuccess: () -> Unit) {
-        _uiState.value = _uiState.value.copy(estaGuardando = true)
+        _uiState.update { it.copy(estaGuardando = true) }
         viewModelScope.launch {
             try {
                 usuarioRepository.insertarUsuario(usuario)
-                _uiState.value = _uiState.value.copy(estaGuardando = false, registroExitoso = true)
-                onSuccess()
+                _uiState.update { it.copy(estaGuardando = false, registroExitoso = true) }
+                onSuccess() // Llamamos al callback para navegar
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(estaGuardando = false)
-                // Handle error (e.g., show a message)
+                _uiState.update { it.copy(estaGuardando = false) }
             }
         }
     }
-    /*fun agregarUsuario(onExito: () -> Unit) {
-        if (esFormularioValido()) {
-            _uiState.value = _uiState.value.copy(estaGuardando = true)
-
-            viewModelScope.launch {
-                val formulario = _uiState.value.formulario
-
-                // 1. Mapear FormularioRegUsuario a Usuario (CORREGIDO)
-                val nuevoUsuario = Usuario(
-                    id = 0,
-                    rut = "TEMPORAL_0", // Relleno
-                    nombre = formulario.nombreCompleto.substringBefore(" ", formulario.nombreCompleto), // Extrae el nombre
-                    apellido = formulario.nombreCompleto.substringAfterLast(" ", "N/A"), // Intenta obtener el apellido
-                    fechaNacimiento = Date(), // Relleno
-                    email = formulario.email,
-                    password = formulario.password,
-                    telefono = formulario.telefono,
-                    fechaRegistro = Date(), // Relleno
-                    rol = Rol.USUARIO
-                    // Se omitió 'direccion' ya que no existe en el modelo Usuario
-                )
-
-                // 2. Insertar en el repositorio (base de datos)
-                val idGenerado = usuarioRepository.insertarUsuario(nuevoUsuario)
-
-                // ... (lógica de manejo de éxito)
-                if (idGenerado > 0) {
-                    onExito()
-                }
-            }
-        }
-
-    }*/
 
     fun actualizarUsuario(usuario: Usuario) {
         viewModelScope.launch {
@@ -252,18 +80,15 @@ class RegistroViewModel(private val usuarioRepository: UsuarioRepository) : View
             usuarioRepository.eliminarUsuario(usuario)
         }
     }
-
-
 }
 
-/**
- * Factory para RegistroViewModel (MODIFICADO)
- */
-class RegistroViewModelFactory(private val usuarioRepository: UsuarioRepository) : ViewModelProvider.Factory {
+class RegistroViewModelFactory(
+    private val repository: UsuarioRepository
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RegistroViewModel::class.java)) {
-            return RegistroViewModel(usuarioRepository) as T // MODIFICADO: Pasa el repositorio
+            return RegistroViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

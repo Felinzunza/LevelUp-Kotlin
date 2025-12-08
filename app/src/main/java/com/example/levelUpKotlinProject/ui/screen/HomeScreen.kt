@@ -1,6 +1,7 @@
 package com.example.levelUpKotlinProject.ui.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -8,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ExitToApp
@@ -18,15 +20,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.data.repository.ProductoRepository
 import com.example.levelUpKotlinProject.domain.model.Producto
+import com.example.levelUpKotlinProject.domain.model.Usuario
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,13 +48,15 @@ fun HomeScreen(
     onCerrarSesion: () -> Unit,
     onIniciarSesionClick: () -> Unit,
     estaLogueado: Boolean,
-    nombreUsuario: String?
+    nombreUsuario: String?,
+    // ✅ CAMBIO: Recibimos el objeto completo para tener la foto
+    usuarioActual: Usuario?
 ) {
     // Datos originales
     val productos by productoRepository.obtenerProductos().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
-    // Estado para el Snackbar (Mensaje emergente)
+    // ✅ NUEVO: Estado para el Snackbar (Mensaje emergente)
     val snackbarHostState = remember { SnackbarHostState() }
 
     // --- ESTADOS DE FILTRO ---
@@ -78,18 +86,36 @@ fun HomeScreen(
                     if (estaLogueado) {
                         Text("Hola, ${nombreUsuario ?: "User"}", fontSize = 12.sp, modifier = Modifier.padding(end = 8.dp))
 
+                        // ✅ FOTO DE PERFIL (ICONO)
                         IconButton(onClick = onPerfilClick) {
-                            Icon(Icons.Default.AccountCircle, "Mi Perfil", tint = MaterialTheme.colorScheme.primary)
+                            if (!usuarioActual?.fotoPerfil.isNullOrBlank()) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = usuarioActual!!.fotoPerfil),
+                                    contentDescription = "Mi Perfil",
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Mi Perfil",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
-                        IconButton(onClick = onCerrarSesion) { Icon(Icons.Default.ExitToApp, "Salir") }
+
                     } else {
                         IconButton(onClick = onIniciarSesionClick) { Icon(Icons.Default.Person, "Login") }
                     }
                     IconButton(onClick = onCarritoClick) { Icon(Icons.Default.ShoppingCart, "Carrito") }
+                    IconButton(onClick = onCerrarSesion) { Icon(Icons.Default.ExitToApp, "Salir") }
                 }
             )
         },
-        // Agregamos el Host del Snackbar aquí
+        // ✅ NUEVO: Agregamos el Host del Snackbar aquí para que se dibuje
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Column(
@@ -157,7 +183,7 @@ fun HomeScreen(
                             onAgregarAlCarrito = {
                                 scope.launch {
                                     carritoRepository.agregarProducto(producto)
-                                    // Mostramos el mensaje
+                                    // ✅ NUEVO: Mostramos el mensaje de confirmación
                                     snackbarHostState.showSnackbar(
                                         message = "${producto.nombre} agregado al carrito",
                                         duration = SnackbarDuration.Short,

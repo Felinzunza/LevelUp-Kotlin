@@ -87,7 +87,7 @@ fun CarritoScreen(
         bottomBar = {
             if (itemsCarrito.isNotEmpty()) {
                 Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.primary,
                     shadowElevation = 8.dp
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {

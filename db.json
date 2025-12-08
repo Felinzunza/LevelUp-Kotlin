@@ -84,36 +84,36 @@
   ],
   "users": [
     {
+      "lastname": "System",
+      "city": "Santiago",
+      "direction": "Casa matriz",
+      "email": "admin@admin.cl",
+      "birthday": "Mon Dec 08 20:22:51 GMT-03:00 2025",
+      "registerDate": "Mon Dec 08 20:22:51 GMT-03:00 2025",
       "id": "101",
-      "rut": "12.345.678-9",
-      "name": "Antonio",
-      "lastname": "Briones",
-      "birthday": "2001-01-01",
-      "registrationDate": "2024-01-15",
-      "username": "Tono",
-      "email": "tono12@duoc.cl",
-      "password": "Cliente1",
-      "phone": "918273645",
-      "direction": "Carrera 999",
-      "city": "Concepción",
-      "region": "Bio Bio",
-      "role": "USUARIO"
+      "name": "Admin",
+      "password": "admin123",
+      "region": "Metropolitana",
+      "role": "ADMIN",
+      "rut": "1.111.111-1",
+      "phone": "",
+      "username": "admin"
     },
     {
-      "id": "102",
-      "rut": "15.555.444-K",
-      "name": "Felipe",
       "lastname": "Inzunza",
-      "birthday": "1995-05-15",
-      "registrationDate": "2024-02-20",
-      "username": "FelinAdmin",
-      "email": "felipe@levelup.cl",
-      "password": "Admin123",
-      "phone": "+56999887766",
-      "direction": "Av. Paicaví 123",
       "city": "Concepción",
+      "direction": "Paicavi 123",
+      "email": "felipe@levelup.cl",
+      "birthday": "Mon Dec 08 17:27:19 GMT-03:00 2025",
+      "registerDate": "Mon Dec 08 17:27:19 GMT-03:00 2025",
+      "id": "102",
+      "name": "Felipe",
+      "password": "Admin123",
       "region": "Bio Bio",
-      "role": "ADMIN"
+      "role": "ADMIN",
+      "rut": "15.555.444-K",
+      "phone": "+56999887766",
+      "username": "FelinAdmin"
     },
     {
       "id": "103",
@@ -168,8 +168,8 @@
       "city": "Los Ángeles",
       "direction": "El Cielo 10",
       "email": "diego@gmail.com",
-      "birthday": "Fri Dec 05 04:25:38 GMT-03:00 2025",
-      "registerDate": "Fri Dec 05 04:25:38 GMT-03:00 2025",
+      "birthday": "Mon Dec 08 20:22:50 GMT-03:00 2025",
+      "registerDate": "Mon Dec 08 20:22:50 GMT-03:00 2025",
       "id": "107",
       "name": "Diego",
       "password": "Cliente1",
@@ -194,6 +194,38 @@
       "rut": "33333333-3",
       "phone": "958958958",
       "username": "rey"
+    },
+    {
+      "lastname": "jojojo\n",
+      "city": "Río Bueno",
+      "direction": "jajajaja 222",
+      "email": "jajaja@gmail.com",
+      "birthday": "Mon Dec 08 13:32:55 GMT-03:00 2025",
+      "registerDate": "Mon Dec 08 13:32:55 GMT-03:00 2025",
+      "id": "4763",
+      "name": "jajaja",
+      "password": "Cliente1",
+      "region": "Los Ríos",
+      "role": "USUARIO",
+      "rut": "1842884-k",
+      "phone": "95831382",
+      "username": "jajaja"
+    },
+    {
+      "lastname": "dido",
+      "city": "Punta Arenas",
+      "direction": "ejudide",
+      "email": "esteban@gmail.com",
+      "birthday": "Mon Dec 08 20:06:18 GMT-03:00 2025",
+      "registerDate": "Mon Dec 08 20:06:18 GMT-03:00 2025",
+      "id": "7796",
+      "name": "Esteban",
+      "password": "Cliente1",
+      "region": "Magallanes",
+      "role": "USUARIO",
+      "rut": "1391941-7",
+      "phone": "95862532",
+      "username": "esteban"
     }
   ],
   "orders": [
@@ -392,6 +424,36 @@
       "paymentMethod": "TARJETA_DEBITO",
       "clientName": "fjwkd",
       "rut": "18282838-9",
+      "subtotal": 70000,
+      "total": 70005
+    },
+    {
+      "id": "7a05",
+      "shippingCost": 5,
+      "courier": "CORREOS_CHILE",
+      "discount": 0,
+      "shippingAddress": "hdhds 423, , ",
+      "status": "EN_PREPARACION",
+      "date": "2025-12-08T20:09:21",
+      "items": [
+        {
+          "quantity": 1,
+          "imageUrl": "teclado_mecanico",
+          "productName": "Teclado Mecánico",
+          "price": 45000,
+          "productId": "2"
+        },
+        {
+          "quantity": 1,
+          "imageUrl": "mouse_gamer",
+          "productName": "Mouse Gamer RGB",
+          "price": 25000,
+          "productId": "1"
+        }
+      ],
+      "paymentMethod": "TARJETA_DEBITO",
+      "clientName": "Esteban",
+      "rut": "1391941-7",
       "subtotal": 70000,
       "total": 70005
     }

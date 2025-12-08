@@ -26,10 +26,9 @@ import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel
 @Composable
 fun LoginUsuarioScreen(
     usuarioRepository: UsuarioRepository,
-    preferenciasManager: PreferenciasManager, // 👈 AÑADIR ESTO
+    preferenciasManager: PreferenciasManager,
     onVolverClick: () -> Unit,
     onLoginExitoso: () -> Unit
-
 ) {
     val viewModel: LoginViewModel = viewModel(
         factory = LoginViewModel.LoginViewModelFactory(usuarioRepository)
@@ -72,7 +71,7 @@ fun LoginUsuarioScreen(
             OutlinedTextField(
                 value = uiState.formulario.email,
                 onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text("Email") },
+                label = { Text("Email o Usuario") }, // Actualizado texto
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 isError = uiState.errores.emailError != null,
@@ -127,13 +126,14 @@ fun LoginUsuarioScreen(
             // Botón Iniciar Sesión
             Button(
                 onClick = {
-                    // Ahora recibimos el objeto 'usuario' en el callback
+                    // LLamamos a iniciar sesión
                     viewModel.iniciarSesion { usuarioLogueado ->
 
-                        // Guardamos email Y NOMBRE
+                        // ✅ Pasamos todos los datos correctamente separados
                         preferenciasManager.guardarSesionUsuario(
+                            id = usuarioLogueado.id,         // ID para lógica interna
                             email = usuarioLogueado.email,
-                            nombre = usuarioLogueado.nombre,// 👈 Aquí está la magia
+                            nombre = usuarioLogueado.nombre, // Nombre para mostrar en pantalla ("Hola Diego")
                             rut = usuarioLogueado.rut
                         )
 
@@ -152,7 +152,7 @@ fun LoginUsuarioScreen(
                     Text("INICIAR SESIÓN", fontSize = 18.sp)
                 }
             }
-
+            // ... resto del código ...
             Spacer(modifier = Modifier.height(16.dp))
 
             // Botón Olvidé mi Contraseña (Placeholder)

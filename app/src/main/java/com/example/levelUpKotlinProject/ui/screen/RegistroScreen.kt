@@ -43,7 +43,10 @@ import com.example.levelUpKotlinProject.domain.model.Usuario
 import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModelFactory
+import java.io.File
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import java.util.Objects
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,17 +59,23 @@ fun RegistroScreen(
     val viewModel: RegistroViewModel = viewModel(factory = RegistroViewModelFactory(usuarioRepository))
     val uiState by viewModel.uiState.collectAsState()
 
-    // --- LÓGICA CÁMARA ---
+    // --- LÓGICA CÁMARA Y GALERÍA ---
     val context = LocalContext.current
     var imagenUri by remember { mutableStateOf<Uri?>(null) }
-    // En registro guardamos la ruta string para enviarla al objeto Usuario
+    // Variable para guardar la ruta final (sea de cámara o galería)
     var rutaImagenFinal by remember { mutableStateOf("") }
 
-    val archivoTemporal = remember { crearArchivoImagen(context) }
+    val archivoTemporal = remember {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "JPEG_" + timeStamp + "_"
+        File.createTempFile(imageFileName, ".jpg", context.externalCacheDir)
+    }
+
     val uriTemporal = remember {
         FileProvider.getUriForFile(Objects.requireNonNull(context), context.packageName + ".provider", archivoTemporal)
     }
 
+    // Launcher Cámara
     val launcherCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
         if (exito) {
             imagenUri = uriTemporal
@@ -76,21 +85,20 @@ fun RegistroScreen(
 
     val launcherPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
         if (concedido) launcherCamara.launch(uriTemporal)
-        else Toast.makeText(context, "Permiso denegado", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(context, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
     }
 
-    //LAUNCHER GALERÍA
+    // Launcher Galería
     val launcherGaleria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
-            // Copiamos la imagen de galería al archivo temporal para tener control total
             try {
+                // Copiamos la imagen de la galería al archivo temporal local
                 val inputStream = context.contentResolver.openInputStream(uri)
                 val outputStream = java.io.FileOutputStream(archivoTemporal)
                 inputStream?.copyTo(outputStream)
                 inputStream?.close()
                 outputStream.close()
 
-                // Usamos la URI de nuestro archivo local (uriTemporal)
                 imagenUri = uriTemporal
                 rutaImagenFinal = uriTemporal.toString()
             } catch (e: Exception) {
@@ -115,43 +123,53 @@ fun RegistroScreen(
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp).verticalScroll(rememberScrollState()),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally // Centrar foto
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // FOTO
+            // FOTO DE PERFIL
             Box(contentAlignment = Alignment.BottomEnd) {
-                val imagenParaMostrar = if(imagenUri != null) imagenUri else if(rutaImagenFinal.isNotEmpty()) rutaImagenFinal else null
-
-                if (imagenParaMostrar != null) {
+                if (imagenUri != null) {
                     Image(
-                        painter = rememberAsyncImagePainter(model = imagenParaMostrar),
+                        painter = rememberAsyncImagePainter(model = imagenUri),
                         contentDescription = null,
-                        modifier = Modifier.size(100.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                            .background(Color.LightGray),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(50.dp))
                     }
                 }
 
-                // BOTONES DE FOTO (CÁMARA Y GALERÍA)
+                // Botones flotantes (Cámara y Galería)
                 Row(
-                    modifier = Modifier.offset(y = 10.dp), // Bajamos un poco los botones
+                    modifier = Modifier.offset(y = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botón Cámara
                     SmallFloatingActionButton(
                         onClick = {
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                                PackageManager.PERMISSION_GRANTED) launcherCamara.launch(uriTemporal)
-                            else launcherPermiso.launch(Manifest.permission.CAMERA)
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+                                launcherCamara.launch(uriTemporal)
+                            else
+                                launcherPermiso.launch(Manifest.permission.CAMERA)
                         },
                         containerColor = MaterialTheme.colorScheme.primary
                     ) { Icon(Icons.Default.CameraAlt, "Cámara") }
 
-                    // Botón Galería
                     SmallFloatingActionButton(
                         onClick = { launcherGaleria.launch("image/*") },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -159,9 +177,10 @@ fun RegistroScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
             Text("Completa tus datos", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-            // CAMPOS DE TEXTO (Igual que antes)
+            // CAMPOS DE TEXTO
             OutlinedTextField(
                 value = uiState.formulario.rut,
                 onValueChange = { viewModel.onRutChange(it) },
@@ -169,14 +188,40 @@ fun RegistroScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // ... (Resto de campos: Nombre, Email, Teléfono, Dirección) ...
-            // Simplificado para el ejemplo, asegúrate de mantener tus campos de Nombre, Apellido, Username separados si ya los tenías así en la versión anterior.
-            // Aquí asumiré que usas las variables locales para nombre/apellido si tu VM no las tiene separadas en el state.
+            OutlinedTextField(
+                value = uiState.formulario.nombreCompleto,
+                onValueChange = { viewModel.onNombreChange(it) },
+                label = { Text("Nombre Completo *") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            OutlinedTextField(value = uiState.formulario.nombreCompleto, onValueChange = { viewModel.onNombreChange(it) }, label = { Text("Nombre Completo") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = uiState.formulario.email, onValueChange = { viewModel.onEmailChange(it) }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = uiState.formulario.password, onValueChange = { viewModel.onPasswordChange(it) }, label = { Text("Contraseña") }, visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(), trailingIcon = { IconButton(onClick = { passwordVisible = !passwordVisible }) { Text(if(passwordVisible) "Ocultar" else "Ver") } }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = uiState.formulario.confirmarPassword, onValueChange = { viewModel.onConfirmarPasswordChange(it) }, label = { Text("Confirmar Contraseña") }, visualTransformation = if (confirmarPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(), trailingIcon = { IconButton(onClick = { confirmarPasswordVisible = !confirmarPasswordVisible }) { Text(if(confirmarPasswordVisible) "Ocultar" else "Ver") } }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = uiState.formulario.email,
+                onValueChange = { viewModel.onEmailChange(it) },
+                label = { Text("Email *") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            )
+
+            OutlinedTextField(
+                value = uiState.formulario.password,
+                onValueChange = { viewModel.onPasswordChange(it) },
+                label = { Text("Contraseña *") },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = { IconButton(onClick = { passwordVisible = !passwordVisible }) { Text(if(passwordVisible) "Ocultar" else "Ver") } },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            OutlinedTextField(
+                value = uiState.formulario.confirmarPassword,
+                onValueChange = { viewModel.onConfirmarPasswordChange(it) },
+                label = { Text("Confirmar Contraseña *") },
+                visualTransformation = if (confirmarPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = { IconButton(onClick = { confirmarPasswordVisible = !confirmarPasswordVisible }) { Text(if(confirmarPasswordVisible) "Ocultar" else "Ver") } },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
 
             SelectorRegionComuna(
                 regionSeleccionada = uiState.formulario.region,
@@ -185,24 +230,39 @@ fun RegistroScreen(
                 onComunaChange = { viewModel.onComunaChange(it) }
             )
 
-            OutlinedTextField(value = uiState.formulario.direccion, onValueChange = { viewModel.onDireccionChange(it) }, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = uiState.formulario.direccion,
+                onValueChange = { viewModel.onDireccionChange(it) },
+                label = { Text("Dirección") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Términos
+            OutlinedTextField(
+                value = uiState.formulario.telefono,
+                onValueChange = { viewModel.onTelefonoChange(it) },
+                label = { Text("Teléfono") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+
+            // TÉRMINOS
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = uiState.formulario.aceptaTerminos, onCheckedChange = { viewModel.onTerminosChange(it) })
                 Text("Acepto los términos y condiciones")
             }
 
+            // BOTÓN REGISTRO
             Button(
                 onClick = {
                     if (viewModel.esFormularioValido()) {
-                        // Construimos el usuario
-                        // OJO: Ajusta esto si usas campos separados nombre/apellido en tu VM
                         val nuevoUsuario = Usuario(
-                            id = "",
+                            id = "", // ID vacío para nuevo usuario
                             rut = uiState.formulario.rut,
-                            nombre = uiState.formulario.nombreCompleto.substringBefore(" "), // Simple split
-                            apellido = uiState.formulario.nombreCompleto.substringAfter(" ", ""),
+
+                            // Separamos nombre completo en dos para cumplir con el modelo
+                            nombre = uiState.formulario.nombreCompleto.trim().substringBefore(" "),
+                            apellido = uiState.formulario.nombreCompleto.trim().substringAfter(" ", ""),
+
                             username = uiState.formulario.email.substringBefore("@"),
                             email = uiState.formulario.email,
                             password = uiState.formulario.password,
@@ -214,16 +274,24 @@ fun RegistroScreen(
                             fechaRegistro = Date(),
                             rol = Rol.USUARIO,
 
-                            // ✅ GUARDAMOS LA FOTO
+                            // ✅ CORRECCIÓN FINAL: Usamos 'fotoPerfil' como indicaste
                             fotoPerfil = rutaImagenFinal
                         )
                         viewModel.agregarUsuario(nuevoUsuario) { onRegistroExitoso() }
+                    } else {
+                        // Feedback si falla la validación
+                        Toast.makeText(context, "Faltan datos obligatorios o las contraseñas no coinciden", Toast.LENGTH_LONG).show()
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = uiState.formulario.aceptaTerminos
+                // Opcional: Deshabilitar visualmente si no acepta términos
+                // enabled = uiState.formulario.aceptaTerminos
             ) {
-                if (uiState.estaGuardando) CircularProgressIndicator(modifier = Modifier.size(24.dp)) else Text("Registrarse")
+                if (uiState.estaGuardando) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Text("Registrarse")
+                }
             }
         }
     }

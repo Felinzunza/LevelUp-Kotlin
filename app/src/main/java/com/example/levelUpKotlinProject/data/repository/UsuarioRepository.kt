@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class UsuarioRepository(
     private val usuarioDao: UsuarioDao,
@@ -78,8 +79,23 @@ class UsuarioRepository(
     }
 
     suspend fun validarCredenciales(identificador: String, password: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            // 1. Intentamos buscar por Email
+            var usuarioEntity = usuarioDao.obtenerUsuarioPorEmail(identificador)
 
-        return true // Placeholder, usa tu lógica real
+            // 2. Si no existe por email, buscamos por Username
+            if (usuarioEntity == null) {
+                usuarioEntity = usuarioDao.obtenerUsuarioPorUsername(identificador)
+            }
+
+            // 3. Si encontramos al usuario, verificamos la contraseña
+            if (usuarioEntity != null) {
+                // NOTA: En una app real, aquí se comparan hashes, no texto plano.
+                return@withContext usuarioEntity.password == password
+            } else {
+                return@withContext false // Usuario no existe
+            }
+        }
     }
 
 

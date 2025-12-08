@@ -17,7 +17,11 @@ object Rutas {
     //cambio
     const val USUARIO = "usuario"
 
-    const val PERFIL_USUARIO = "perfil_usuario"
+    // ✅ CAMBIO: La ruta base ahora es solo el nombre
+    const val PERFIL_BASE = "perfil_usuario"
+    // ✅ CAMBIO: Ruta completa con argumento para la navegación
+    const val PERFIL_USUARIO = "$PERFIL_BASE/{usuarioId}"
+
 
     const val OPCIONES_ACCESO = "opciones_acceso" // AÑADIDO
     const val LOGIN_USER = "login_user" // AÑADIDO
@@ -42,6 +46,9 @@ object Rutas {
 
     fun formularioEditarProducto(id: String) = "formulario_producto?productoId=$id"
     fun formularioEditarUsuario(id: String) = "formulario_usuario?usuarioId=$id"
+
+    // ✅ NUEVO HELPER: Para navegar al perfil de alguien específico
+    fun perfilUsuario(id: String) = "$PERFIL_BASE/$id"
 
 
 
