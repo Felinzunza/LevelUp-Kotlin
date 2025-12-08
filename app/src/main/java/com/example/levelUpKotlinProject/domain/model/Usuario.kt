@@ -9,8 +9,7 @@ import java.util.Date
  * - Las contraseñas se hashean (bcrypt, argon2)
  * - Se usa JWT o OAuth2 para autenticación
  * - Las credenciales se almacenan en backend seguro
- * 
- * Para fines educativos: Usamos SharedPreferences local
+ *
  *
  *
  */
@@ -28,7 +27,8 @@ data class Usuario(
     val comuna: String,
     val region: String,
     val fechaRegistro: Date,
-    val rol: Rol = Rol.USUARIO
+    val rol: Rol = Rol.USUARIO,
+    val fotoPerfil : String? = null
 )
 
 enum class Rol {

@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -37,6 +38,7 @@ fun HomeScreen(
     onCarritoClick: () -> Unit,
     onRegistroClick: () -> Unit,
     onVolverPortada: () -> Unit,
+    onPerfilClick: () -> Unit,
     onCerrarSesion: () -> Unit,
     onIniciarSesionClick: () -> Unit,
     estaLogueado: Boolean,
@@ -75,6 +77,10 @@ fun HomeScreen(
                 actions = {
                     if (estaLogueado) {
                         Text("Hola, ${nombreUsuario ?: "User"}", fontSize = 12.sp, modifier = Modifier.padding(end = 8.dp))
+
+                        IconButton(onClick = onPerfilClick) {
+                            Icon(Icons.Default.AccountCircle, "Mi Perfil", tint = MaterialTheme.colorScheme.primary)
+                        }
                         IconButton(onClick = onCerrarSesion) { Icon(Icons.Default.ExitToApp, "Salir") }
                     } else {
                         IconButton(onClick = onIniciarSesionClick) { Icon(Icons.Default.Person, "Login") }

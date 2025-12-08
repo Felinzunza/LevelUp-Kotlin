@@ -78,7 +78,7 @@
       "id": "0c59",
       "price": 56345,
       "stock": 31,
-      "title": "ajedrez",
+      "title": "Ajedrez",
       "image": "teclado_mecanico"
     }
   ],
@@ -164,20 +164,36 @@
       "role": "USUARIO"
     },
     {
-      "id": "107",
-      "rut": "9.876.654-8",
-      "name": "Diego",
       "lastname": "Maradona",
-      "birthday": "2025-12-01",
-      "registrationDate": "2025-12-01",
-      "username": "d1eg0",
-      "email": "diego@gmail.com",
-      "password": "Cliente1",
-      "phone": "659892317",
-      "direction": "El Cielo 10",
       "city": "Los Ángeles",
+      "direction": "El Cielo 10",
+      "email": "diego@gmail.com",
+      "birthday": "Fri Dec 05 04:25:38 GMT-03:00 2025",
+      "registerDate": "Fri Dec 05 04:25:38 GMT-03:00 2025",
+      "id": "107",
+      "name": "Diego",
+      "password": "Cliente1",
       "region": "Biobío",
-      "role": "USUARIO"
+      "role": "USUARIO",
+      "rut": "9.876.654-8",
+      "phone": "659892317",
+      "username": "D10S"
+    },
+    {
+      "lastname": "Jefe",
+      "city": "Río Bueno",
+      "direction": "hdjsjs 12",
+      "email": "rey@admin.cl",
+      "birthday": "Fri Dec 05 04:16:48 GMT-03:00 2025",
+      "registerDate": "Fri Dec 05 04:16:48 GMT-03:00 2025",
+      "id": "64bb",
+      "name": "Rey",
+      "password": "Admin123",
+      "region": "Los Ríos",
+      "role": "ADMIN",
+      "rut": "33333333-3",
+      "phone": "958958958",
+      "username": "rey"
     }
   ],
   "orders": [
@@ -267,7 +283,7 @@
       "courier": "CORREOS_CHILE",
       "discount": 0,
       "shippingAddress": ", , ",
-      "status": "EN_PREPARACION",
+      "status": "EN_TRANSITO",
       "date": "2025-12-01T18:56:31",
       "items": [
         {
@@ -323,7 +339,7 @@
       "courier": "CORREOS_CHILE",
       "discount": 0,
       "shippingAddress": "las casas 31, Padre Las Casas, Araucanía",
-      "status": "EN_PREPARACION",
+      "status": "EN_TRANSITO",
       "date": "2025-12-01T19:37:47",
       "items": [
         {
@@ -350,76 +366,34 @@
       "total": 224985
     },
     {
-      "id": 0,
+      "id": "743b",
       "shippingCost": 5,
       "courier": "CORREOS_CHILE",
       "discount": 0,
-      "shippingAddress": ", , ",
-      "status": "EN_PREPARACION",
-      "date": "2025-12-04T00:48:41",
+      "shippingAddress": "jfjwud, Copiapó, Atacama",
+      "status": "ENTREGADO",
+      "date": "2025-12-05T00:33:37",
       "items": [
         {
           "quantity": 1,
           "imageUrl": "mouse_gamer",
           "productName": "Mouse Gamer RGB",
-          "orderId": 0,
           "price": 25000,
           "productId": "1"
         },
         {
           "quantity": 1,
           "imageUrl": "teclado_mecanico",
-          "productName": "ajedrez",
-          "orderId": 0,
-          "price": 56345,
-          "productId": "0c59"
-        },
-        {
-          "quantity": 1,
-          "imageUrl": "audifonos_rgb",
-          "productName": "Audífonos Gamer RGB",
-          "orderId": 0,
-          "price": 34990,
-          "productId": "3"
+          "productName": "Teclado Mecánico",
+          "price": 45000,
+          "productId": "2"
         }
       ],
       "paymentMethod": "TARJETA_DEBITO",
-      "clientName": "Diego",
-      "rut": "9.876.654-8",
-      "subtotal": 116335,
-      "total": 116340
-    },
-    {
-      "id": 0,
-      "shippingCost": 5,
-      "courier": "CORREOS_CHILE",
-      "discount": 0,
-      "shippingAddress": "dusjxjd, Chile Chico, Aysén",
-      "status": "EN_PREPARACION",
-      "date": "2025-12-04T01:01:16",
-      "items": [
-        {
-          "quantity": 1,
-          "imageUrl": "silla_gamer",
-          "productName": "Silla Gamer",
-          "orderId": 0,
-          "price": 129990,
-          "productId": "6"
-        },
-        {
-          "quantity": 1,
-          "imageUrl": "mousepad_xxl",
-          "productName": "Mousepad XXL",
-          "orderId": 0,
-          "price": 14990,
-          "productId": "5"
-        }
-      ],
-      "paymentMethod": "TARJETA_DEBITO",
-      "clientName": "Diego",
-      "rut": "9.876.654-8",
-      "subtotal": 144980,
-      "total": 144985
+      "clientName": "fjwkd",
+      "rut": "18282838-9",
+      "subtotal": 70000,
+      "total": 70005
     }
   ]
 }

@@ -1,37 +1,50 @@
 package com.example.levelUpKotlinProject.ui.screen
 
+// ... (Imports idénticos a RegistroScreen) ...
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import coil.compose.rememberAsyncImagePainter
 import com.example.levelUpKotlinProject.domain.model.Rol
 import com.example.levelUpKotlinProject.domain.model.Usuario
 import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
+import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,8 +53,8 @@ fun FormularioUsuarioScreen(
     onGuardar: (Usuario) -> Unit,
     onCancelar: () -> Unit
 ) {
-    // FORMATO SEGURO CON GUIONES
     val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+    val context = LocalContext.current
 
     // ESTADOS
     var rut by remember { mutableStateOf(usuarioExistente?.rut ?: "") }
@@ -56,48 +69,67 @@ fun FormularioUsuarioScreen(
     var comuna by remember { mutableStateOf(usuarioExistente?.comuna ?: "") }
     var rol by remember { mutableStateOf(usuarioExistente?.rol ?: Rol.USUARIO) }
 
-    // ESTADO DE FECHA (Objeto Date real para evitar errores de parseo)
+    // FOTO
+    var imagenUri by remember { mutableStateOf<Uri?>(null) }
+    var rutaImagenFinal by remember { mutableStateOf(usuarioExistente?.fotoPerfil ?: "") }
+
     var fechaNacimientoSeleccionada by remember { mutableStateOf(usuarioExistente?.fechaNacimiento) }
-    // Texto visual para el campo (se actualiza solo)
     val fechaVisual = fechaNacimientoSeleccionada?.let { dateFormat.format(it) } ?: ""
 
-    // ESTADOS DE UI
     var mensajeError by remember { mutableStateOf<String?>(null) }
     var passwordVisible by remember { mutableStateOf(false) }
     var mostrarCalendario by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = fechaNacimientoSeleccionada?.time
-    )
 
+    // PREPARACIÓN DE ARCHIVOS
+    val archivoTemporal = remember { crearArchivoImagen(context) }
+    val uriTemporal = remember { FileProvider.getUriForFile(Objects.requireNonNull(context), context.packageName + ".provider", archivoTemporal) }
+
+    // 1. LAUNCHER CÁMARA
+    val launcherCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
+        if (exito) {
+            imagenUri = uriTemporal
+            rutaImagenFinal = uriTemporal.toString()
+        }
+    }
+    val launcherPermisoCamara = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) launcherCamara.launch(uriTemporal) }
+
+    // 2. LAUNCHER GALERÍA (NUEVO)
+    val launcherGaleria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            // Copiamos la imagen de galería al archivo temporal para tener control total
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val outputStream = java.io.FileOutputStream(archivoTemporal)
+                inputStream?.copyTo(outputStream)
+                inputStream?.close()
+                outputStream.close()
+
+                // Usamos la URI de nuestro archivo local (uriTemporal)
+                imagenUri = uriTemporal
+                rutaImagenFinal = uriTemporal.toString()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Fallback si falla la copia
+                imagenUri = uri
+                rutaImagenFinal = uri.toString()
+            }
+        }
+    }
+
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaNacimientoSeleccionada?.time)
     val esEdicion = usuarioExistente != null
     val scrollState = rememberScrollState()
 
-    // ESTADOS DROPDOWN
     var expanded by remember { mutableStateOf(false) }
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
     val icon = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
-    // DIÁLOGO DE CALENDARIO
     if (mostrarCalendario) {
         DatePickerDialog(
             onDismissRequest = { mostrarCalendario = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        // Ajuste de zona horaria para evitar el error de "un día menos"
-                        val offset = TimeZone.getDefault().getOffset(millis)
-                        fechaNacimientoSeleccionada = Date(millis + offset)
-                        mensajeError = null
-                    }
-                    mostrarCalendario = false
-                }) { Text("Aceptar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+            confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { fechaNacimientoSeleccionada = Date(it) }; mostrarCalendario = false }) { Text("Aceptar") } },
+            dismissButton = { TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") } }
+        ) { DatePicker(state = datePickerState) }
     }
 
     Scaffold(
@@ -110,147 +142,104 @@ fun FormularioUsuarioScreen(
     ) { paddingValues ->
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues).verticalScroll(scrollState).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // HEADER
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = if (esEdicion) "Editando: ${usuarioExistente?.nombre}" else "Completa los datos", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+            // FOTO
+            Box(contentAlignment = Alignment.BottomEnd) {
+                val imagenParaMostrar = if(imagenUri != null) imagenUri else if(rutaImagenFinal.isNotEmpty()) rutaImagenFinal else null
+
+                if (imagenParaMostrar != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(model = imagenParaMostrar),
+                        contentDescription = null,
+                        modifier = Modifier.size(100.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(50.dp))
+                    }
+                }
+
+                // BOTONES DE FOTO (CÁMARA Y GALERÍA)
+                Row(
+                    modifier = Modifier.offset(y = 10.dp), // Bajamos un poco los botones
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Botón Cámara
+                    SmallFloatingActionButton(
+                        onClick = {
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                                PackageManager.PERMISSION_GRANTED) launcherCamara.launch(uriTemporal)
+                            else launcherPermisoCamara.launch(Manifest.permission.CAMERA)
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ) { Icon(Icons.Default.CameraAlt, "Cámara") }
+
+                    // Botón Galería
+                    SmallFloatingActionButton(
+                        onClick = { launcherGaleria.launch("image/*") },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    ) { Icon(Icons.Default.Image, "Galería") }
                 }
             }
 
-            // CAMPOS DE TEXTO
-            OutlinedTextField(value = rut, onValueChange = { rut = it.uppercase(); mensajeError = null }, label = { Text("RUT/Cédula *") }, modifier = Modifier.fillMaxWidth())
+            // Espacio extra por los botones flotantes
+            Spacer(modifier = Modifier.height(16.dp))
 
+            OutlinedTextField(value = rut, onValueChange = { rut = it.uppercase() }, label = { Text("RUT *") }, modifier = Modifier.fillMaxWidth())
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(value = nombre, onValueChange = { nombre = it; mensajeError = null }, label = { Text("Nombre *") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = apellido, onValueChange = { apellido = it; mensajeError = null }, label = { Text("Apellido *") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(value = apellido, onValueChange = { apellido = it }, label = { Text("Apellido") }, modifier = Modifier.weight(1f))
+            }
+            OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
+
+            // Fecha
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(value = fechaVisual, onValueChange = {}, label = { Text("Nacimiento") }, readOnly = true, trailingIcon = { IconButton(onClick = { mostrarCalendario = true }) { Icon(Icons.Default.DateRange, null) } }, modifier = Modifier.fillMaxWidth())
             }
 
-            OutlinedTextField(value = username, onValueChange = { username = it; mensajeError = null }, label = { Text("Username *") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
 
-            // CAMPO FECHA (SOLO LECTURA + CALENDARIO)
+            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Contraseña") }, visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(), trailingIcon = { IconButton(onClick = { passwordVisible = !passwordVisible }) { Text(if(passwordVisible) "Ocultar" else "Ver") } }, modifier = Modifier.fillMaxWidth())
+
+            OutlinedTextField(value = telefono, onValueChange = { telefono = it }, label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth())
+
+            SelectorRegionComuna(region, comuna, { region = it; comuna = "" }, { comuna = it })
+            OutlinedTextField(value = direccion, onValueChange = { direccion = it }, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
+
+            // Rol
             Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = fechaVisual,
-                    onValueChange = { },
-                    label = { Text("Fecha de Nacimiento *") },
-                    placeholder = { Text("dd-mm-yyyy") },
-                    readOnly = true, // No permite escribir manual para evitar crash
-                    trailingIcon = {
-                        IconButton(onClick = { mostrarCalendario = true }) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    interactionSource = remember { MutableInteractionSource() }.also { source ->
-                        LaunchedEffect(source) {
-                            source.interactions.collect { if (it is PressInteraction.Release) mostrarCalendario = true }
-                        }
-                    }
-                )
-            }
-
-            OutlinedTextField(value = email, onValueChange = { email = it; mensajeError = null }, label = { Text("Email *") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth())
-
-            // PASSWORD CON VISIBILIDAD
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it; mensajeError = null },
-                label = { Text(if (esEdicion) "Contraseña (vacío mantiene)" else "Contraseña *") },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                trailingIcon = {
-                    val texto = if (passwordVisible) "Ocultar" else "Ver"
-                    TextButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Text(texto, fontSize = 12.sp)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-
-
-            OutlinedTextField(value = telefono, onValueChange = { telefono = it.filter { char -> char.isDigit() }; mensajeError = null }, label = { Text("Teléfono") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth())
-
-
-            Text("Ubicación", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            // ... UI ...
-            SelectorRegionComuna(
-                regionSeleccionada = region,
-                comunaSeleccionada = comuna,
-                onRegionChange = { nuevaRegion ->
-                    region = nuevaRegion
-                    comuna = "" // 🧹 ¡LIMPIEZA MANUAL AQUÍ!
-                },
-                onComunaChange = { nuevaComuna ->
-                    comuna = nuevaComuna
-                }
-            )
-
-            OutlinedTextField(
-                value = direccion,
-                onValueChange = { direccion = it },
-                label = { Text("Dirección (Calle y N°)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-
-
-            // ROL DROPDOWN
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = rol.name, onValueChange = {}, modifier = Modifier.fillMaxWidth().onGloballyPositioned { textFieldSize = it.size.toSize() },
-                    label = { Text("Rol *") }, readOnly = true, trailingIcon = { Icon(icon, "Rol", Modifier.clickable { expanded = !expanded }) }
-                )
+                OutlinedTextField(value = rol.name, onValueChange = {}, modifier = Modifier.fillMaxWidth().onGloballyPositioned { textFieldSize = it.size.toSize() }, label = { Text("Rol") }, readOnly = true, trailingIcon = { Icon(icon, null, Modifier.clickable { expanded = !expanded }) })
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })) {
-                    Rol.entries.forEach { selection ->
-                        DropdownMenuItem(text = { Text(selection.name) }, onClick = { rol = selection; expanded = false })
-                    }
+                    Rol.entries.forEach { s -> DropdownMenuItem(text = { Text(s.name) }, onClick = { rol = s; expanded = false }) }
                 }
             }
 
-            if (mensajeError != null) {
-                Text(text = mensajeError!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
-            }
+            if (mensajeError != null) Text(mensajeError!!, color = MaterialTheme.colorScheme.error)
 
-            // BOTONES (CON VALIDACIÓN SEGURA)
             Button(
                 onClick = {
-                    when {
-                        rut.isBlank() -> mensajeError = "El RUT es obligatorio"
-                        nombre.isBlank() -> mensajeError = "El Nombre es obligatorio"
-                        apellido.isBlank() -> mensajeError = "El Apellido es obligatorio"
-                        username.isBlank() -> mensajeError = "El Username es obligatorio"
-                        fechaNacimientoSeleccionada == null -> mensajeError = "Selecciona una fecha de nacimiento"
-                        email.isBlank() -> mensajeError = "El Email es obligatorio"
-                        region.isBlank() -> mensajeError = "Selecciona una Región"
-                        comuna.isBlank() -> mensajeError = "Selecciona una Comuna"
-                        direccion.isBlank() -> mensajeError = "La Dirección es obligatoria"
-                        !esEdicion && password.isBlank() -> mensajeError = "La contraseña es obligatoria"
-                        else -> {
-                            // Todo válido, creamos el objeto
-                            val usuario = Usuario(
-                                id = usuarioExistente?.id ?: "",
-                                rut = rut, nombre = nombre, apellido = apellido,
-                                fechaNacimiento = fechaNacimientoSeleccionada!!, // Seguro porque validamos null arriba
-                                username = username, email = email,
-                                password = password.takeIf { it.isNotBlank() } ?: usuarioExistente?.password ?: "",
-                                telefono = telefono,
-                                direccion = direccion,
-                                comuna = comuna,
-                                region = region,
-                                fechaRegistro = usuarioExistente?.fechaRegistro ?: Date(),
-                                rol = rol
-                            )
-                            onGuardar(usuario)
-                        }
+                    if (rut.isNotBlank() && nombre.isNotBlank()) {
+                        val usuario = Usuario(
+                            id = usuarioExistente?.id ?: "",
+                            rut = rut, nombre = nombre, apellido = apellido,
+                            fechaNacimiento = fechaNacimientoSeleccionada ?: Date(),
+                            username = username, email = email,
+                            password = password.takeIf { it.isNotBlank() } ?: usuarioExistente?.password ?: "",
+                            telefono = telefono, direccion = direccion, comuna = comuna, region = region,
+                            fechaRegistro = usuarioExistente?.fechaRegistro ?: Date(),
+                            rol = rol,
+                            fotoPerfil = rutaImagenFinal // ✅
+                        )
+                        onGuardar(usuario)
+                    } else {
+                        mensajeError = "Faltan datos"
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (esEdicion) "Actualizar Usuario" else "Guardar Usuario")
-            }
+            ) { Text(if (esEdicion) "Actualizar" else "Guardar") }
         }
     }
 }

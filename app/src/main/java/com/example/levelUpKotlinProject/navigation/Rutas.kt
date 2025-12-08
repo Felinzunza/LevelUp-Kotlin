@@ -17,6 +17,8 @@ object Rutas {
     //cambio
     const val USUARIO = "usuario"
 
+    const val PERFIL_USUARIO = "perfil_usuario"
+
     const val OPCIONES_ACCESO = "opciones_acceso" // AÑADIDO
     const val LOGIN_USER = "login_user" // AÑADIDO
 

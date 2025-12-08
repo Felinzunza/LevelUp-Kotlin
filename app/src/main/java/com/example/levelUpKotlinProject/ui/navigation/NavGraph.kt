@@ -23,6 +23,7 @@ import com.example.levelUpKotlinProject.ui.screen.DetalleProductoScreen
 import com.example.levelUpKotlinProject.ui.screen.FormularioProductoScreen
 import com.example.levelUpKotlinProject.ui.screen.FormularioUsuarioScreen
 import com.example.levelUpKotlinProject.ui.screen.HomeScreen
+import com.example.levelUpKotlinProject.ui.screen.PerfilUsuarioScreen
 import com.example.levelUpKotlinProject.ui.screen.LoginAdminScreen
 import com.example.levelUpKotlinProject.ui.screen.PortadaScreen
 import com.example.levelUpKotlinProject.ui.screen.OpcionesAccesoScreen
@@ -34,6 +35,7 @@ import com.example.levelUpKotlinProject.ui.viewmodel.ProductoViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel
 import com.example.levelUpKotlinProject.ui.viewmodel.LoginViewModel.LoginViewModelFactory
+
 
 
 /**
@@ -102,6 +104,9 @@ fun NavGraph(
                 carritoRepository = carritoRepository,
                 onProductoClick = { productoId ->
                     navController.navigate("${Rutas.DETALLE}/$productoId")
+                },
+                onPerfilClick = {
+                    navController.navigate(Rutas.PERFIL_USUARIO)
                 },
                 onCarritoClick = {
                     navController.navigate(Rutas.CARRITO)
@@ -172,6 +177,30 @@ fun NavGraph(
             )
         }
 
+        //Ruta 4: Perfil de Usuario
+        composable(route = Rutas.PERFIL_USUARIO) {
+            // Obtenemos el email del usuario logueado
+            val emailUsuario = preferenciasManager.obtenerEmailUsuario()
+
+            // Obtenemos la lista de usuarios del ViewModel compartido
+            val usuariosState by registroViewModel.uiState.collectAsState()
+
+            // Buscamos al usuario actual
+            val usuarioActual = usuariosState.usuarios.find { it.email == emailUsuario }
+
+            PerfilUsuarioScreen(
+                usuarioActual = usuarioActual,
+                registroViewModel = registroViewModel,
+                onVolverClick = { navController.popBackStack() },
+                onCerrarSesion = {
+                    preferenciasManager.cerrarSesionUsuario()
+                    navController.navigate(Rutas.PORTADA) {
+                        popUpTo(0)
+                    }
+                }
+            )
+        }
+
         // Ruta 4: Formulario de registro (REGISTRO)
         composable(route = Rutas.REGISTRO) {
             RegistroScreen(
@@ -187,7 +216,7 @@ fun NavGraph(
             )
         }
 
-        // NUEVA RUTA: Login de Usuario
+        // Ruta 5: Login de Usuario
         composable(route = Rutas.LOGIN_USER) {
             LoginUsuarioScreen(
                 usuarioRepository = usuarioRepository,
@@ -203,7 +232,7 @@ fun NavGraph(
             )
         }
 
-        // Ruta 5: Login Admin (CORREGIDA PARA USAR DB)
+        // Ruta 6: Login Admin (CORREGIDA PARA USAR DB)
         composable(route = Rutas.LOGIN_ADMIN) {
 
             // 1. Instanciamos el ViewModel usando el repositorio real
@@ -228,7 +257,7 @@ fun NavGraph(
             )
         }
 
-        // Ruta 6: Panel Admin
+        // Ruta 7: Panel Admin
         composable(route = Rutas.PANEL_ADMIN) {
             if (!preferenciasManager.estaAdminLogueado()) {
                 LaunchedEffect(Unit) {
@@ -290,7 +319,7 @@ fun NavGraph(
             )
         }
 
-        // Ruta 7: Formulario Producto (ID STRING)
+        // Ruta 8: Formulario Producto (ID STRING)
         composable(
             route = Rutas.FORMULARIO_PRODUCTO, // Asegúrate que en Rutas.kt sea "formulario_producto?productoId={productoId}"
             arguments = listOf(
@@ -328,9 +357,7 @@ fun NavGraph(
         }
 
 
-        // ... (Despues de la Ruta 7: Formulario Producto)
-
-// Ruta 8: Formulario Usuario (agregar o editar)
+        // Ruta 9: Formulario Usuario (agregar o editar)
         composable(
             route = Rutas.FORMULARIO_USUARIO, // Asumiremos que es "formulario_usuario?usuarioId={usuarioId}"
             arguments = listOf(
@@ -373,6 +400,7 @@ fun NavGraph(
             )
         }
 
+        //Ruta 10: Detalle de orden
         composable(
             route = Rutas.DETALLE_ORDEN,
             arguments = listOf(navArgument("ordenId") { type = NavType.StringType })

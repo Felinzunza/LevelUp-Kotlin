@@ -23,6 +23,7 @@ data class UsuarioEntity(
     val region: String,
     val fechaRegistro: Long, // Room guarda Long
     val rol: String = "USUARIO", // Room guarda String
+    var fotoPerfil : String? = null
 )
 
 // Conversión Entidad -> Modelo
@@ -44,7 +45,8 @@ fun UsuarioEntity.toUsuario() = Usuario(
         Rol.valueOf(rol)
     } catch (e: Exception) {
         Rol.USUARIO
-    }
+    },
+    fotoPerfil = fotoPerfil
 )
 
 // Conversión Modelo -> Entidad
@@ -62,5 +64,6 @@ fun Usuario.toEntity() = UsuarioEntity(
     comuna=comuna,
     region=region,
     fechaRegistro = fechaRegistro.time, // Date a Long
-    rol = rol.name
+    rol = rol.name,
+    fotoPerfil = fotoPerfil
 )
