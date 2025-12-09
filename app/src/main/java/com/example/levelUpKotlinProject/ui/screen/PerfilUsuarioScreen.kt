@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
@@ -32,6 +34,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -64,6 +68,12 @@ fun PerfilUsuarioScreen(
     var apellido by remember { mutableStateOf(usuarioActual?.apellido ?: "") }
     var telefono by remember { mutableStateOf(usuarioActual?.telefono ?: "") }
     var direccion by remember { mutableStateOf(usuarioActual?.direccion ?: "") }
+
+    // --- VARIABLES DE SEGURIDAD (CAMBIO DE CONTRASEÑA) ---
+    var passwordActualInput by remember { mutableStateOf("") }
+    var passwordNuevaInput by remember { mutableStateOf("") }
+    var passwordConfirmarInput by remember { mutableStateOf("") }
+    var mostrarSeccionPassword by remember { mutableStateOf(false) } // Para expandir/colapsar
 
     // Estado de la imagen (URI temporal o ruta guardada)
     var imagenUri by remember { mutableStateOf<Uri?>(null) }
@@ -237,24 +247,96 @@ fun PerfilUsuarioScreen(
 //
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- SECCIÓN SEGURIDAD (CAMBIO DE CONTRASEÑA) ---
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { mostrarSeccionPassword = !mostrarSeccionPassword },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Cambiar Contraseña", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Icon(
+                    imageVector = if (mostrarSeccionPassword) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null
+                )
+            }
+
+            if (mostrarSeccionPassword) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = passwordActualInput,
+                            onValueChange = { passwordActualInput = it },
+                            label = { Text("Contraseña Actual") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = passwordNuevaInput,
+                            onValueChange = { passwordNuevaInput = it },
+                            label = { Text("Nueva Contraseña") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = passwordConfirmarInput,
+                            onValueChange = { passwordConfirmarInput = it },
+                            label = { Text("Confirmar Nueva") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // BOTÓN GUARDAR
             Button(
                 onClick = {
                     if (usuarioActual != null) {
-                        val usuarioActualizado = usuarioActual.copy(
-                            nombre = nombre,
-                            apellido = apellido,
-                            telefono = telefono,
-                            direccion = direccion,
-                            // Guardamos la ruta de la imagen como String
-                            // (En un proyecto real, aquí subirías la imagen al servidor y guardarías la URL remota)
-                            fotoPerfil = imagenGuardadaRuta
-                        )
+                        // 1. Validamos lógica de contraseña (si el usuario intentó cambiarla)
+                        var nuevaPasswordFinal = usuarioActual.password // Por defecto, mantenemos la vieja
+                        var cambioPasswordValido = true
 
-                        // Usamos el ViewModel existente para actualizar
-                        registroViewModel.actualizarUsuario(usuarioActualizado)
-                        Toast.makeText(context, "Perfil actualizado", Toast.LENGTH_SHORT).show()
-                        onVolverClick()
+                        if (passwordActualInput.isNotEmpty() || passwordNuevaInput.isNotEmpty()) {
+                            // Si escribió algo en los campos de pass, quiere cambiarla
+                            if (passwordActualInput != usuarioActual.password) {
+                                Toast.makeText(context, "Error: La contraseña actual es incorrecta", Toast.LENGTH_SHORT).show()
+                                cambioPasswordValido = false
+                            } else if (passwordNuevaInput.isBlank()) {
+                                Toast.makeText(context, "Error: La nueva contraseña no puede estar vacía", Toast.LENGTH_SHORT).show()
+                                cambioPasswordValido = false
+                            } else if (passwordNuevaInput != passwordConfirmarInput) {
+                                Toast.makeText(context, "Error: Las nuevas contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                                cambioPasswordValido = false
+                            } else {
+                                // Todo OK, asignamos la nueva
+                                nuevaPasswordFinal = passwordNuevaInput
+                            }
+                        }
+
+                        // 2. Si la validación de pass pasó (o no se tocó), guardamos todo
+                        if (cambioPasswordValido) {
+                            val usuarioActualizado = usuarioActual.copy(
+                                nombre = nombre,
+                                apellido = apellido,
+                                telefono = telefono,
+                                direccion = direccion,
+                                fotoPerfil = imagenGuardadaRuta,
+                                password = nuevaPasswordFinal // Actualizamos pass
+                            )
+
+                            registroViewModel.actualizarUsuario(usuarioActualizado)
+                            Toast.makeText(context, "Perfil actualizado correctamente", Toast.LENGTH_SHORT).show()
+
+                            // Limpiamos campos de pass
+                            passwordActualInput = ""
+                            passwordNuevaInput = ""
+                            passwordConfirmarInput = ""
+                            mostrarSeccionPassword = false
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp)
