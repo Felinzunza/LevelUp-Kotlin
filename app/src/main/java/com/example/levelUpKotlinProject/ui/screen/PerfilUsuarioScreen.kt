@@ -14,13 +14,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -35,12 +34,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import com.example.levelUpKotlinProject.domain.model.Usuario
+import com.example.levelUpKotlinProject.domain.validator.ValidadorFormulario
+import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
 import com.example.levelUpKotlinProject.ui.viewmodel.RegistroViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -49,85 +51,72 @@ import java.util.Locale
 import java.util.Objects
 
 /**
- * Pantalla de Perfil de Usuario
- * Permite ver datos, editarlos y tomar una foto de perfil.
+ * Pantalla de Perfil de Usuario CORREGIDA
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilUsuarioScreen(
-    usuarioActual: Usuario?, // El usuario logueado actualmente
-    registroViewModel: RegistroViewModel, // Reusamos este VM para actualizar
+    usuarioActual: Usuario?,
+    registroViewModel: RegistroViewModel,
     onVolverClick: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    // Estados de los campos editables
-    var nombre by remember { mutableStateOf(usuarioActual?.nombre ?: "") }
-    var apellido by remember { mutableStateOf(usuarioActual?.apellido ?: "") }
-    var telefono by remember { mutableStateOf(usuarioActual?.telefono ?: "") }
-    var direccion by remember { mutableStateOf(usuarioActual?.direccion ?: "") }
 
-    // --- VARIABLES DE SEGURIDAD (CAMBIO DE CONTRASEÑA) ---
+    var nombre by remember(usuarioActual) { mutableStateOf(usuarioActual?.nombre ?: "") }
+    var apellido by remember(usuarioActual) { mutableStateOf(usuarioActual?.apellido ?: "") }
+    var telefono by remember(usuarioActual) { mutableStateOf(usuarioActual?.telefono ?: "") }
+    var direccion by remember(usuarioActual) { mutableStateOf(usuarioActual?.direccion ?: "") }
+    var region by remember(usuarioActual) { mutableStateOf(usuarioActual?.region ?: "") }
+    var comuna by remember(usuarioActual) { mutableStateOf(usuarioActual?.comuna ?: "") }
+
+    // La imagen también debe actualizarse si viene del usuario
+    var imagenGuardadaRuta by remember(usuarioActual) { mutableStateOf(usuarioActual?.fotoPerfil ?: "") }
+    var imagenUri by remember { mutableStateOf<Uri?>(null) }
+
+    // --- ESTADOS DE ERROR ---
+    var errorNombre by remember { mutableStateOf<String?>(null) }
+    var errorApellido by remember { mutableStateOf<String?>(null) }
+    var errorTelefono by remember { mutableStateOf<String?>(null) }
+    var errorDireccion by remember { mutableStateOf<String?>(null) }
+
+    // --- VARIABLES DE SEGURIDAD ---
     var passwordActualInput by remember { mutableStateOf("") }
     var passwordNuevaInput by remember { mutableStateOf("") }
     var passwordConfirmarInput by remember { mutableStateOf("") }
-    var mostrarSeccionPassword by remember { mutableStateOf(false) } // Para expandir/colapsar
+    var mostrarSeccionPassword by remember { mutableStateOf(false) }
 
-    // Estado de la imagen (URI temporal o ruta guardada)
-    var imagenUri by remember { mutableStateOf<Uri?>(null) }
-    var imagenGuardadaRuta by remember { mutableStateOf(usuarioActual?.fotoPerfil ?: "") }
-
-    // Lógica para la Cámara
+    // --- LÓGICA DE IMAGEN (Igual que antes) ---
     val archivoTemporal = remember { crearArchivoImagen(context) }
     val uriTemporal = remember {
-        FileProvider.getUriForFile(
-            Objects.requireNonNull(context),
-            context.packageName + ".provider",
-            archivoTemporal
-        )
+        FileProvider.getUriForFile(Objects.requireNonNull(context), context.packageName + ".provider", archivoTemporal)
     }
 
-    val launcherCamara = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { exito ->
+    val launcherCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
         if (exito) {
             imagenUri = uriTemporal
-            imagenGuardadaRuta = uriTemporal.toString()
+            imagenGuardadaRuta = archivoTemporal.absolutePath
         }
     }
 
-    val launcherPermiso = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { esConcedido ->
-        if (esConcedido) {
-            launcherCamara.launch(uriTemporal)
-        } else {
-            Toast.makeText(context, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
-        }
+    val launcherPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { esConcedido ->
+        if (esConcedido) launcherCamara.launch(uriTemporal)
+        else Toast.makeText(context, "Permiso denegado", Toast.LENGTH_SHORT).show()
     }
 
-    // 2. LAUNCHER GALERÍA (NUEVO)
     val launcherGaleria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
-            // Copiamos la imagen de galería al archivo temporal para tener control total
             try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val outputStream = java.io.FileOutputStream(archivoTemporal)
-                inputStream?.copyTo(outputStream)
-                inputStream?.close()
-                outputStream.close()
-
-                // Usamos la URI de nuestro archivo local (uriTemporal)
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    java.io.FileOutputStream(archivoTemporal).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
                 imagenUri = uriTemporal
-                imagenGuardadaRuta = uriTemporal.toString()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                // Fallback si falla la copia
-                imagenUri = uri
-                imagenGuardadaRuta = uri.toString()
-            }
+                imagenGuardadaRuta = archivoTemporal.absolutePath
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -135,16 +124,8 @@ fun PerfilUsuarioScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Mi Perfil") },
-                navigationIcon = {
-                    IconButton(onClick = onVolverClick) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onCerrarSesion) {
-                        Icon(Icons.Default.ExitToApp, "Cerrar Sesión")
-                    }
-                }
+                navigationIcon = { IconButton(onClick = onVolverClick) { Icon(Icons.Default.ArrowBack, "Volver") } },
+                actions = { IconButton(onClick = onCerrarSesion) { Icon(Icons.AutoMirrored.Filled.ExitToApp, "Cerrar Sesión") } }
             )
         }
     ) { padding ->
@@ -157,10 +138,11 @@ fun PerfilUsuarioScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // --- ZONA DE FOTO DE PERFIL ---
-            // FOTO
+            // --- FOTO ---
             Box(contentAlignment = Alignment.BottomEnd) {
-                val imagenParaMostrar = if(imagenUri != null) imagenUri else if(imagenGuardadaRuta.isNotEmpty()) imagenGuardadaRuta else null
+                val imagenParaMostrar = if(imagenUri != null) imagenUri else if(imagenGuardadaRuta.isNotEmpty()) try {
+                    if(imagenGuardadaRuta.startsWith("/")) Uri.fromFile(File(imagenGuardadaRuta)) else Uri.parse(imagenGuardadaRuta)
+                } catch(e:Exception){ null } else null
 
                 if (imagenParaMostrar != null) {
                     Image(
@@ -175,22 +157,15 @@ fun PerfilUsuarioScreen(
                     }
                 }
 
-                // BOTONES DE FOTO (CÁMARA Y GALERÍA)
-                Row(
-                    modifier = Modifier.offset(y = 10.dp), // Bajamos un poco los botones
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Botón Cámara
+                Row(modifier = Modifier.offset(y = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SmallFloatingActionButton(
                         onClick = {
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                                PackageManager.PERMISSION_GRANTED) launcherCamara.launch(uriTemporal)
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launcherCamara.launch(uriTemporal)
                             else launcherPermiso.launch(Manifest.permission.CAMERA)
                         },
                         containerColor = MaterialTheme.colorScheme.primary
                     ) { Icon(Icons.Default.CameraAlt, "Cámara") }
 
-                    // Botón Galería
                     SmallFloatingActionButton(
                         onClick = { launcherGaleria.launch("image/*") },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -198,94 +173,66 @@ fun PerfilUsuarioScreen(
                 }
             }
 
-            Text(
-                text = "@${usuarioActual?.username}",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.Gray
-            )
-
+            Text("@${usuarioActual?.username}", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
             HorizontalDivider()
+
+            Text("Datos Personales", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
 
             // --- CAMPOS EDITABLES ---
             OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
-                label = { Text("Nombre") },
-                modifier = Modifier.fillMaxWidth()
+                value = nombre, onValueChange = { nombre = it; errorNombre = null },
+                label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth(),
+                isError = errorNombre != null, supportingText = { errorNombre?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             OutlinedTextField(
-                value = apellido,
-                onValueChange = { apellido = it },
-                label = { Text("Apellido") },
-                modifier = Modifier.fillMaxWidth()
+                value = apellido, onValueChange = { apellido = it; errorApellido = null },
+                label = { Text("Apellido") }, modifier = Modifier.fillMaxWidth(),
+                isError = errorApellido != null, supportingText = { errorApellido?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+            )
+
+            SelectorRegionComuna(
+                regionSeleccionada = region,
+                comunaSeleccionada = comuna,
+                onRegionChange = { region = it; comuna = "" },
+                onComunaChange = { comuna = it }
             )
 
             OutlinedTextField(
-                value = direccion,
-                onValueChange = { direccion = it },
-                label = { Text("Dirección") },
-                modifier = Modifier.fillMaxWidth()
+                value = direccion, onValueChange = { direccion = it; errorDireccion = null },
+                label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth(),
+                isError = errorDireccion != null, supportingText = { errorDireccion?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             OutlinedTextField(
-                value = telefono,
-                onValueChange = { telefono = it },
-                label = { Text("Teléfono") },
-                modifier = Modifier.fillMaxWidth()
+                value = telefono, onValueChange = { telefono = it; errorTelefono = null },
+                label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                isError = errorTelefono != null, supportingText = { errorTelefono?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
-            //
-            // Campos de solo lectura (Email y RUT no se suelen cambiar fácil)
-            OutlinedTextField(
-                value = usuarioActual?.email ?: "",
-                onValueChange = {},
-                label = { Text("Email (No editable)") },
-                readOnly = true,
-                enabled = false,
-                modifier = Modifier.fillMaxWidth()
-            )
-//
-            Spacer(modifier = Modifier.height(16.dp))
 
-            // --- SECCIÓN SEGURIDAD (CAMBIO DE CONTRASEÑA) ---
+            // Solo lectura
+            OutlinedTextField(value = usuarioActual?.email ?: "", onValueChange = {}, label = { Text("Email (No editable)") }, readOnly = true, enabled = false, modifier = Modifier.fillMaxWidth())
+
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider()
+
+            // --- SECCIÓN SEGURIDAD ---
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { mostrarSeccionPassword = !mostrarSeccionPassword },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("Cambiar Contraseña", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Icon(
-                    imageVector = if (mostrarSeccionPassword) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null
-                )
+                Icon(imageVector = if (mostrarSeccionPassword) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null)
             }
 
             if (mostrarSeccionPassword) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                ) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = passwordActualInput,
-                            onValueChange = { passwordActualInput = it },
-                            label = { Text("Contraseña Actual") },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = passwordNuevaInput,
-                            onValueChange = { passwordNuevaInput = it },
-                            label = { Text("Nueva Contraseña") },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = passwordConfirmarInput,
-                            onValueChange = { passwordConfirmarInput = it },
-                            label = { Text("Confirmar Nueva") },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        OutlinedTextField(value = passwordActualInput, onValueChange = { passwordActualInput = it }, label = { Text("Contraseña Actual") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = passwordNuevaInput, onValueChange = { passwordNuevaInput = it }, label = { Text("Nueva Contraseña") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = passwordConfirmarInput, onValueChange = { passwordConfirmarInput = it }, label = { Text("Confirmar Nueva") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -296,42 +243,79 @@ fun PerfilUsuarioScreen(
             Button(
                 onClick = {
                     if (usuarioActual != null) {
-                        // 1. Validamos lógica de contraseña (si el usuario intentó cambiarla)
-                        var nuevaPasswordFinal = usuarioActual.password // Por defecto, mantenemos la vieja
+
+                        // 🟢 CORRECCIÓN 2: Validación de Nombre Simplificada
+                        // Ya no usamos ValidadorFormulario.validarNombreCompleto(nombre) porque busca espacio.
+                        // Ahora solo verificamos que no esté vacío.
+                        val errNom = if(nombre.isBlank()) "El nombre es obligatorio" else null
+
+                        val errApe = if(apellido.isBlank()) "El apellido es obligatorio" else null
+
+                        // Teléfono y Dirección siguen usando el validador estándar
+                        val errTel = ValidadorFormulario.validarTelefono(telefono)
+                        val errDir = ValidadorFormulario.validarDireccion(direccion)
+
+                        // Validación Región/Comuna
+                        val regionValida = region.isNotBlank() && region != "Selecciona una región"
+                        val comunaValida = comuna.isNotBlank() && comuna != "Selecciona una comuna"
+
+                        errorNombre = errNom
+                        errorApellido = errApe
+                        errorTelefono = errTel
+                        errorDireccion = errDir
+
+                        if (errorNombre != null || errorApellido != null || errorTelefono != null || errorDireccion != null) {
+                            Toast.makeText(context, "Por favor corrige los errores", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        if (!regionValida || !comunaValida) {
+                            Toast.makeText(context, "Debes seleccionar Región y Comuna", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // Lógica Contraseña (igual)
+                        var nuevaPasswordFinal = usuarioActual.password
                         var cambioPasswordValido = true
 
                         if (passwordActualInput.isNotEmpty() || passwordNuevaInput.isNotEmpty()) {
-                            // Si escribió algo en los campos de pass, quiere cambiarla
                             if (passwordActualInput != usuarioActual.password) {
-                                Toast.makeText(context, "Error: La contraseña actual es incorrecta", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "La contraseña actual es incorrecta", Toast.LENGTH_SHORT).show()
                                 cambioPasswordValido = false
                             } else if (passwordNuevaInput.isBlank()) {
-                                Toast.makeText(context, "Error: La nueva contraseña no puede estar vacía", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "La nueva contraseña no puede estar vacía", Toast.LENGTH_SHORT).show()
                                 cambioPasswordValido = false
                             } else if (passwordNuevaInput != passwordConfirmarInput) {
-                                Toast.makeText(context, "Error: Las nuevas contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Las nuevas contraseñas no coinciden", Toast.LENGTH_SHORT).show()
                                 cambioPasswordValido = false
                             } else {
-                                // Todo OK, asignamos la nueva
-                                nuevaPasswordFinal = passwordNuevaInput
+                                val errorPassFuerte = ValidadorFormulario.validarPassword(passwordNuevaInput)
+                                if (errorPassFuerte != null) {
+                                    Toast.makeText(context, errorPassFuerte, Toast.LENGTH_LONG).show()
+                                    cambioPasswordValido = false
+                                } else {
+                                    nuevaPasswordFinal = passwordNuevaInput
+                                }
                             }
                         }
 
-                        // 2. Si la validación de pass pasó (o no se tocó), guardamos todo
+                        // Guardar
                         if (cambioPasswordValido) {
                             val usuarioActualizado = usuarioActual.copy(
                                 nombre = nombre,
                                 apellido = apellido,
                                 telefono = telefono,
                                 direccion = direccion,
+                                region = region,
+                                comuna = comuna,
                                 fotoPerfil = imagenGuardadaRuta,
-                                password = nuevaPasswordFinal // Actualizamos pass
+                                password = nuevaPasswordFinal
                             )
 
                             registroViewModel.actualizarUsuario(usuarioActualizado)
                             Toast.makeText(context, "Perfil actualizado correctamente", Toast.LENGTH_SHORT).show()
 
-                            // Limpiamos campos de pass
+                            // Limpiar pass
                             passwordActualInput = ""
                             passwordNuevaInput = ""
                             passwordConfirmarInput = ""
@@ -349,13 +333,8 @@ fun PerfilUsuarioScreen(
     }
 }
 
-// Helper para crear archivo temporal
 fun crearArchivoImagen(context: Context): File {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val imageFileName = "JPEG_" + timeStamp + "_"
-    return File.createTempFile(
-        imageFileName,
-        ".jpg",
-        context.externalCacheDir
-    )
+    return File.createTempFile(imageFileName, ".jpg", context.externalCacheDir)
 }

@@ -26,6 +26,7 @@ object ValidadorFormulario {
      */
     fun validarFormulario(formulario: FormularioRegUsuario): ErroresFormulario {
         return ErroresFormulario(
+            rutError = validarRut(formulario.rut),
             nombreCompletoError = validarNombreCompleto(formulario.nombreCompleto),
             emailError = validarEmail(formulario.email),
             telefonoError = validarTelefono(formulario.telefono),
@@ -37,6 +38,21 @@ object ValidadorFormulario {
             ),
             terminosError = validarTerminos(formulario.aceptaTerminos)
         )
+    }
+
+    fun validarRut(rut: String): String? {
+        val rutLimpio = rut.trim()
+
+        return when {
+            // 1. Validar que no sea muy corto (ej: 1-9 es muy corto)
+            rutLimpio.length < 7 -> "El RUT debe tener al menos 7 caracteres"
+
+            // 2. Validar que tenga el guion
+            !rutLimpio.contains("-") -> "El RUT debe llevar guion (Ej: 12345678-9)"
+
+            // Si pasa esas dos, es válido para tu criterio actual
+            else -> null
+        }
     }
     
     fun validarNombreCompleto(nombre: String): String? {

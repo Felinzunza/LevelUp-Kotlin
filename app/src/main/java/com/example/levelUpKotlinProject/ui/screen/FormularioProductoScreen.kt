@@ -14,16 +14,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.levelUpKotlinProject.domain.model.Producto
+import com.example.levelUpKotlinProject.domain.validator.ValidadorProducto // 👈 Asegúrate de importar esto
 
-/**
- * FormularioProductoScreen: Formulario para agregar o editar productos
- * * Funcionalidades:
- * - Modo agregar (productoExistente = null)
- * - Modo editar (productoExistente != null)
- * - Validaciones de todos los campos
- * - Mensajes de error específicos
- * - PRESERVA EL ID AL EDITAR (Corrección crítica)
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioProductoScreen(
@@ -31,16 +23,22 @@ fun FormularioProductoScreen(
     onGuardar: (Producto) -> Unit,
     onCancelar: () -> Unit
 ) {
-    // Estados del formulario
+    // --- ESTADOS DE DATOS ---
     var nombre by remember { mutableStateOf(productoExistente?.nombre ?: "") }
     var descripcion by remember { mutableStateOf(productoExistente?.descripcion ?: "") }
-    // Convertimos a String para el campo de texto, evitando mostrar "0" si es nuevo
     var precio by remember { mutableStateOf(productoExistente?.precio?.toInt()?.toString() ?: "") }
     var stock by remember { mutableStateOf(productoExistente?.stock?.toString() ?: "") }
     var categoria by remember { mutableStateOf(productoExistente?.categoria ?: "") }
     var imagenUrl by remember { mutableStateOf(productoExistente?.imagenUrl ?: "") }
 
-    var mensajeError by remember { mutableStateOf<String?>(null) }
+    // --- ESTADOS DE ERROR (VALIDACIÓN) ---
+
+    var errorNombre by remember { mutableStateOf<String?>(null) }
+    var errorDescripcion by remember { mutableStateOf<String?>(null) }
+    var errorPrecio by remember { mutableStateOf<String?>(null) }
+    var errorStock by remember { mutableStateOf<String?>(null) }
+    var errorCategoria by remember { mutableStateOf<String?>(null) }
+    var errorImagen by remember { mutableStateOf<String?>(null) }
 
     val esEdicion = productoExistente != null
     val scrollState = rememberScrollState()
@@ -48,15 +46,10 @@ fun FormularioProductoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(if (esEdicion) "Editar Producto" else "Nuevo Producto")
-                },
+                title = { Text(if (esEdicion) "Editar Producto" else "Nuevo Producto") },
                 navigationIcon = {
                     IconButton(onClick = onCancelar) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Cancelar"
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Cancelar")
                     }
                 }
             )
@@ -91,11 +84,13 @@ fun FormularioProductoScreen(
                 value = nombre,
                 onValueChange = {
                     nombre = it
-                    mensajeError = null
+                    errorNombre = null // Limpiamos error al escribir
                 },
                 label = { Text("Nombre del producto *") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorNombre != null,
+                supportingText = { errorNombre?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             // Campo: Descripción
@@ -103,40 +98,50 @@ fun FormularioProductoScreen(
                 value = descripcion,
                 onValueChange = {
                     descripcion = it
-                    mensajeError = null
+                    errorDescripcion = null
                 },
                 label = { Text("Descripción *") },
                 minLines = 3,
                 maxLines = 5,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorDescripcion != null,
+                supportingText = { errorDescripcion?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             // Campo: Precio
             OutlinedTextField(
                 value = precio,
                 onValueChange = {
-                    // Solo permitimos números
-                    precio = it.filter { char -> char.isDigit() }
-                    mensajeError = null
+                    // Filtramos solo números
+                    if (it.all { char -> char.isDigit() }) {
+                        precio = it
+                        errorPrecio = null
+                    }
                 },
                 label = { Text("Precio (CLP) *") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 prefix = { Text("$") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorPrecio != null,
+                supportingText = { errorPrecio?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             // Campo: Stock
             OutlinedTextField(
                 value = stock,
                 onValueChange = {
-                    stock = it.filter { char -> char.isDigit() }
-                    mensajeError = null
+                    if (it.all { char -> char.isDigit() }) {
+                        stock = it
+                        errorStock = null
+                    }
                 },
                 label = { Text("Stock disponible *") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorStock != null,
+                supportingText = { errorStock?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             // Campo: Categoría
@@ -144,50 +149,37 @@ fun FormularioProductoScreen(
                 value = categoria,
                 onValueChange = {
                     categoria = it
-                    mensajeError = null
+                    errorCategoria = null
                 },
                 label = { Text("Categoría *") },
                 singleLine = true,
-                placeholder = { Text("Ej: Periféricos, Audio, Video...") },
-                modifier = Modifier.fillMaxWidth()
+                placeholder = { Text("Ej: Periféricos, Audio...") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorCategoria != null,
+                supportingText = { errorCategoria?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             // Campo: ID de imagen
             OutlinedTextField(
                 value = imagenUrl,
                 onValueChange = {
-                    // Convertimos a formato snake_case automáticamente para evitar errores
+                    // Convertimos a minúsculas y reemplazamos espacios automáticamente
                     imagenUrl = it.lowercase().replace(" ", "_")
-                    mensajeError = null
+                    errorImagen = null
                 },
                 label = { Text("ID de imagen (drawable) *") },
                 singleLine = true,
                 placeholder = { Text("Ej: teclado_mecanico") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorImagen != null,
                 supportingText = {
-                    Text(
-                        text = "Debe coincidir con un archivo en drawable/ (sin extensión)",
-                        fontSize = 12.sp
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Visualización de Errores
-            if (mensajeError != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Text(
-                        text = mensajeError!!,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    if (errorImagen != null) {
+                        Text(errorImagen!!, color = MaterialTheme.colorScheme.error)
+                    } else {
+                        Text("Debe coincidir con un archivo en drawable/ (sin extensión)", fontSize = 12.sp)
+                    }
                 }
-            }
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -207,45 +199,37 @@ fun FormularioProductoScreen(
                 // Botón Guardar
                 Button(
                     onClick = {
-                        // Validaciones
-                        when {
-                            nombre.isBlank() -> {
-                                mensajeError = "El nombre es obligatorio"
-                            }
-                            descripcion.isBlank() -> {
-                                mensajeError = "La descripción es obligatoria"
-                            }
-                            // Validar precio
-                            precio.isBlank() || (precio.toIntOrNull() ?: 0) <= 0 -> {
-                                mensajeError = "Ingresa un precio válido mayor a 0"
-                            }
-                            // Validar stock (puede ser 0)
-                            stock.isBlank() || (stock.toIntOrNull() ?: -1) < 0 -> {
-                                mensajeError = "Ingresa un stock válido (0 o más)"
-                            }
-                            categoria.isBlank() -> {
-                                mensajeError = "La categoría es obligatoria"
-                            }
-                            imagenUrl.isBlank() -> {
-                                mensajeError = "El ID de imagen es obligatorio"
-                            }
-                            else -> {
-                                // Todo válido, crear o actualizar producto
-                                val producto = Producto(
-                                    // 🛑 AQUÍ ESTÁ LA SOLUCIÓN:
-                                    // Si editamos, mantenemos el ID original (ej: 105).
-                                    // Si es nuevo, usamos 0.
-                                    id = productoExistente?.id ?: "",
+                        // 1. Ejecutar validaciones
+                        val valNombre = ValidadorProducto.validarNombre(nombre)
+                        val valDesc = ValidadorProducto.validarDescripcion(descripcion)
+                        val valPrecio = ValidadorProducto.validarPrecio(precio)
+                        val valStock = ValidadorProducto.validarStock(stock)
+                        val valCat = ValidadorProducto.validarCategoria(categoria)
+                        val valImg = ValidadorProducto.validarImagenUrl(imagenUrl)
 
-                                    nombre = nombre.trim(),
-                                    descripcion = descripcion.trim(),
-                                    precio = precio.toDouble(),
-                                    imagenUrl = imagenUrl.trim(),
-                                    categoria = categoria.trim(),
-                                    stock = stock.toInt()
-                                )
-                                onGuardar(producto)
-                            }
+                        // 2. Actualizar estado visual de errores
+                        errorNombre = valNombre
+                        errorDescripcion = valDesc
+                        errorPrecio = valPrecio
+                        errorStock = valStock
+                        errorCategoria = valCat
+                        errorImagen = valImg
+
+                        // 3. Verificar si todo está limpio
+                        if (valNombre == null && valDesc == null && valPrecio == null &&
+                            valStock == null && valCat == null && valImg == null) {
+
+                            // Todo válido, crear o actualizar producto
+                            val producto = Producto(
+                                id = productoExistente?.id ?: "", // Mantener ID
+                                nombre = nombre.trim(),
+                                descripcion = descripcion.trim(),
+                                precio = precio.toDouble(),
+                                imagenUrl = imagenUrl.trim(),
+                                categoria = categoria.trim(),
+                                stock = stock.toInt()
+                            )
+                            onGuardar(producto)
                         }
                     },
                     modifier = Modifier.weight(1f)

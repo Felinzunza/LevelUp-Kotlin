@@ -10,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,31 +19,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.text.input.VisualTransformation // Asegúrate de tener este también
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import com.example.levelUpKotlinProject.domain.model.Rol
 import com.example.levelUpKotlinProject.domain.model.Usuario
-import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna
+import com.example.levelUpKotlinProject.domain.validator.ValidadorFormulario // 👈 Importamos el validador
+import com.example.levelUpKotlinProject.ui.components.SelectorRegionComuna // 👈 Importamos el selector
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,56 +59,53 @@ fun FormularioUsuarioScreen(
     var username by remember { mutableStateOf(usuarioExistente?.username ?: "") }
     var rut by remember { mutableStateOf(usuarioExistente?.rut ?: "") }
     var password by remember { mutableStateOf(usuarioExistente?.password ?: "") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    // Nuevos campos necesarios
+    var telefono by remember { mutableStateOf(usuarioExistente?.telefono ?: "") }
+    var direccion by remember { mutableStateOf(usuarioExistente?.direccion ?: "") }
+    var region by remember { mutableStateOf(usuarioExistente?.region ?: "") }
+    var comuna by remember { mutableStateOf(usuarioExistente?.comuna ?: "") }
+
     var rolSeleccionado by remember { mutableStateOf(usuarioExistente?.rol ?: Rol.USUARIO) }
 
-    // --- LÓGICA DE IMAGEN ---
+    // --- VARIABLES DE ERROR (VALIDACIÓN) ---
+    var errorRut by remember { mutableStateOf<String?>(null) }
+    var errorNombre by remember { mutableStateOf<String?>(null) }
+    var errorEmail by remember { mutableStateOf<String?>(null) }
+    var errorTelefono by remember { mutableStateOf<String?>(null) }
+    var errorDireccion by remember { mutableStateOf<String?>(null) }
+    var errorPassword by remember { mutableStateOf<String?>(null) }
 
-    // 1. Inicializamos con la foto que ya tenga el usuario (si estamos editando)
+    // --- LÓGICA DE IMAGEN ---
     var imagenUri by remember { mutableStateOf<Uri?>(null) }
     var imagenGuardadaRuta by remember { mutableStateOf(usuarioExistente?.fotoPerfil ?: "") }
-
-    // 2. Preparamos el archivo temporal único para este formulario
-    // Usamos la función que pusimos al final del archivo
     val archivoTemporal = remember { crearArchivoImagenFormulario(context) }
-
     val uriTemporal = remember {
-        FileProvider.getUriForFile(
-            Objects.requireNonNull(context),
-            context.packageName + ".provider",
-            archivoTemporal
-        )
+        FileProvider.getUriForFile(Objects.requireNonNull(context), context.packageName + ".provider", archivoTemporal)
     }
 
-    // 3. Launcher de CÁMARA (Guarda directo en el archivo temporal)
     val launcherCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
         if (exito) {
             imagenUri = uriTemporal
             imagenGuardadaRuta = archivoTemporal.absolutePath
         }
     }
-
-    // 4. Launcher de PERMISOS
     val launcherPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { esConcedido ->
         if (esConcedido) launcherCamara.launch(uriTemporal)
         else Toast.makeText(context, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
     }
-
-    // 5. Launcher de GALERÍA (Tu lógica corregida con .use) ✅
     val launcherGaleria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             try {
-                // ✅ CORRECCIÓN: Usamos .use para cerrar los flujos automáticamente y evitar errores
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     java.io.FileOutputStream(archivoTemporal).use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
                 }
-
                 imagenUri = uriTemporal
                 imagenGuardadaRuta = archivoTemporal.absolutePath
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -131,11 +124,7 @@ fun FormularioUsuarioScreen(
 
             // --- VISUALIZADOR DE FOTO ---
             Box(contentAlignment = Alignment.BottomEnd) {
-                // Lógica de qué mostrar: ¿Hay nueva URI? -> úsala. ¿Si no, hay ruta guardada? -> úsala.
-                val imagenParaMostrar = if (imagenUri != null) imagenUri
-                else if (imagenGuardadaRuta.isNotEmpty()) imagenGuardadaRuta
-                else null
-
+                val imagenParaMostrar = if (imagenUri != null) imagenUri else if (imagenGuardadaRuta.isNotEmpty()) imagenGuardadaRuta else null
                 if (imagenParaMostrar != null) {
                     Image(
                         painter = rememberAsyncImagePainter(model = imagenParaMostrar),
@@ -148,8 +137,6 @@ fun FormularioUsuarioScreen(
                         Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(60.dp))
                     }
                 }
-
-                // Botones pequeños para cambiar foto
                 Row(modifier = Modifier.offset(y = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SmallFloatingActionButton(
                         onClick = {
@@ -159,9 +146,8 @@ fun FormularioUsuarioScreen(
                         },
                         containerColor = MaterialTheme.colorScheme.primary
                     ) { Icon(Icons.Default.CameraAlt, "Cámara") }
-
                     SmallFloatingActionButton(
-                        onClick = { launcherGaleria.launch("image/*") }, // Lanza el selector corregido
+                        onClick = { launcherGaleria.launch("image/*") },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                     ) { Icon(Icons.Default.Image, "Galería") }
                 }
@@ -169,15 +155,123 @@ fun FormularioUsuarioScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- CAMPOS ---
-            OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = apellido, onValueChange = { apellido = it }, label = { Text("Apellido") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = rut, onValueChange = { rut = it }, label = { Text("RUT") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth())
+            // --- CAMPOS DE TEXTO CON VALIDACIÓN ---
+            // RUT
+            OutlinedTextField(
+                value = rut,
+                onValueChange = {
+                    rut = it
+                    errorRut = null // Limpiamos el error rojo cuando el usuario escribe
+                },
+                label = { Text("RUT") },
+                placeholder = { Text("Ej: 12345678-9") },
+                modifier = Modifier.fillMaxWidth(),
 
-            // Selector de Rol
+                // Muestra rojo si hay error
+                isError = errorRut != null,
+
+                // Muestra el mensaje de error abajo
+                supportingText = {
+                    errorRut?.let { mensaje ->
+                        Text(mensaje, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                // Usamos Text para permitir la 'K' y el guion '-'
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+            )
+
+            // NOMBRE
+            OutlinedTextField(
+                value = nombre,
+                onValueChange = { nombre = it; errorNombre = null },
+                label = { Text("Nombre") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorNombre != null,
+                supportingText = { errorNombre?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+            )
+
+            // APELLIDO (Validación simple manual)
+            OutlinedTextField(
+                value = apellido,
+                onValueChange = { apellido = it },
+                label = { Text("Apellido") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // USERNAME
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // EMAIL (Con Validador)
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it; errorEmail = null },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = errorEmail != null,
+                supportingText = { errorEmail?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+            )
+
+            // TELEFONO (Con Validador)
+            OutlinedTextField(
+                value = telefono,
+                onValueChange = { telefono = it; errorTelefono = null },
+                label = { Text("Teléfono") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                isError = errorTelefono != null,
+                supportingText = { errorTelefono?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+            )
+
+
+            // --- SELECTOR DE REGIÓN Y COMUNA ---
+            SelectorRegionComuna(
+                regionSeleccionada = region,
+                comunaSeleccionada = comuna,
+                onRegionChange = { nuevaRegion ->
+                    region = nuevaRegion
+                    comuna = "" // Resetear comuna al cambiar región
+                },
+                onComunaChange = { nuevaComuna -> comuna = nuevaComuna }
+            )
+
+            // DIRECCIÓN (Con Validador)
+            OutlinedTextField(
+                value = direccion,
+                onValueChange = { direccion = it; errorDireccion = null },
+                label = { Text("Dirección") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errorDireccion != null,
+                supportingText = { errorDireccion?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+            )
+
+            // PASSWORD (Con Validador)
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it; errorPassword = null },
+                label = { Text("Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = description)
+                    }
+                },
+
+                isError = errorPassword != null,
+                supportingText = { errorPassword?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+            )
+
+            // SELECTOR DE ROL
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Rol: ", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -194,27 +288,51 @@ fun FormularioUsuarioScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = {
-                        val usuarioAGuardar = Usuario(
-                            id = usuarioExistente?.id ?: "",
-                            nombre = nombre,
-                            apellido = apellido,
-                            email = email,
-                            username = username,
-                            rut = rut,
-                            password = password,
-                            rol = rolSeleccionado,
-                            fotoPerfil = imagenGuardadaRuta,
+                        // --- LÓGICA DE VALIDACIÓN ANTES DE GUARDAR ---
 
-                            // ✅ CORRECCIÓN: Agregamos los campos que faltaban
-                            // Si el usuario existe, mantenemos sus datos. Si es nuevo, ponemos vacío o fecha actual.
-                            telefono = usuarioExistente?.telefono ?: "",
-                            region = usuarioExistente?.region ?: "",
-                            comuna = usuarioExistente?.comuna ?: "",
-                            direccion = usuarioExistente?.direccion ?: "",
-                            fechaNacimiento = usuarioExistente?.fechaNacimiento ?: Date(),
-                            fechaRegistro = usuarioExistente?.fechaRegistro ?: Date()
-                        )
-                        onGuardar(usuarioAGuardar)
+                        // 1. Validar campos individuales usando ValidadorFormulario
+                        val valRut = ValidadorFormulario.validarRut(rut)
+                        val valEmail = ValidadorFormulario.validarEmail(email)
+                        val valTelefono = ValidadorFormulario.validarTelefono(telefono)
+                        val valDireccion = ValidadorFormulario.validarDireccion(direccion)
+                        val valPassword = ValidadorFormulario.validarPassword(password)
+
+                        // Validación manual para nombre (ya que el validador usa "nombre completo")
+                        val valNombre = if (nombre.isBlank()) "El nombre es obligatorio" else null
+
+                        // 2. Actualizar estados de error
+                        errorRut = valRut
+                        errorEmail = valEmail
+                        errorTelefono = valTelefono
+                        errorDireccion = valDireccion
+                        errorPassword = valPassword
+                        errorNombre = valNombre
+
+                        // 3. Verificar si hay errores
+                        if (valRut == null && valEmail == null && valTelefono == null && valDireccion == null && valPassword == null && valNombre == null) {
+                            // TODO VALIDO -> GUARDAR
+                            val usuarioAGuardar = Usuario(
+                                id = usuarioExistente?.id ?: "",
+                                nombre = nombre,
+                                apellido = apellido,
+                                email = email,
+                                username = username,
+                                rut = rut,
+                                password = password,
+                                rol = rolSeleccionado,
+                                fotoPerfil = imagenGuardadaRuta,
+                                telefono = telefono,
+                                region = region,
+                                comuna = comuna,
+                                direccion = direccion,
+                                fechaNacimiento = usuarioExistente?.fechaNacimiento ?: Date(),
+                                fechaRegistro = usuarioExistente?.fechaRegistro ?: Date()
+                            )
+                            onGuardar(usuarioAGuardar)
+                        } else {
+                            // HAY ERRORES
+                            Toast.makeText(context, "Por favor corrige los errores", Toast.LENGTH_SHORT).show()
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 ) { Text("Guardar") }
@@ -223,14 +341,9 @@ fun FormularioUsuarioScreen(
     }
 }
 
-
 fun crearArchivoImagenFormulario(context: Context): File {
-    // Quitamos "pattern =" para evitar errores en versiones viejas de Java/Android
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val imageFileName = "JPEG_" + timeStamp + "_"
-    return File.createTempFile(
-        imageFileName,
-        ".jpg",
-        context.externalCacheDir
-    )
+    return File.createTempFile(imageFileName, ".jpg", context.externalCacheDir)
 }
+

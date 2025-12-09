@@ -10,11 +10,9 @@ import com.example.levelUpKotlinProject.domain.model.Usuario
  * 
  */
 data class RegistroUiState(
-    //cambio
-    val usuarios: List<Usuario> = emptyList(),
-
     val formulario: FormularioRegUsuario = FormularioRegUsuario(),
     val errores: ErroresFormulario = ErroresFormulario(),
+    val usuarios: List<Usuario> = emptyList(),
     val estaGuardando: Boolean = false,
     val registroExitoso: Boolean = false
 )

@@ -7,6 +7,7 @@ package com.example.levelUpKotlinProject.domain.model
  * Autor: Prof. Sting Adams Parra Silva
  */
 data class ErroresFormulario(
+    val rutError: String? = null, // 👈 AGREGAR ESTO
     val nombreCompletoError: String? = null,
     val emailError: String? = null,
     val telefonoError: String? = null,
@@ -15,14 +16,15 @@ data class ErroresFormulario(
     val confirmarPasswordError: String? = null,
     val terminosError: String? = null
 ) {
-    // Verifica si hay algún error
-    fun hayErrores(): Boolean {
-        return nombreCompletoError != null ||
-                emailError != null ||
-                telefonoError != null ||
-                direccionError != null ||
-                passwordError != null ||
-                confirmarPasswordError != null ||
-                terminosError != null
+    // Función auxiliar para saber si NO hay ningún error
+    fun esValido(): Boolean {
+        return  rutError == null &&
+                nombreCompletoError == null &&
+                emailError == null &&
+                telefonoError == null &&
+                direccionError == null &&
+                passwordError == null &&
+                confirmarPasswordError == null &&
+                terminosError == null
     }
 }
