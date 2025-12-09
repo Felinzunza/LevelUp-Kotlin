@@ -1,6 +1,5 @@
 package com.example.levelUpKotlinProject.ui.screen
 
-// ... (Imports idénticos a RegistroScreen) ...
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -46,201 +45,192 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioUsuarioScreen(
-    usuarioExistente: Usuario?,
+    usuarioExistente: Usuario? = null,
     onGuardar: (Usuario) -> Unit,
     onCancelar: () -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
-    // ESTADOS
-    var rut by remember { mutableStateOf(usuarioExistente?.rut ?: "") }
+    // --- VARIABLES DE DATOS ---
     var nombre by remember { mutableStateOf(usuarioExistente?.nombre ?: "") }
     var apellido by remember { mutableStateOf(usuarioExistente?.apellido ?: "") }
-    var username by remember { mutableStateOf(usuarioExistente?.username ?: "") }
     var email by remember { mutableStateOf(usuarioExistente?.email ?: "") }
-    var password by remember { mutableStateOf("") }
-    var telefono by remember { mutableStateOf(usuarioExistente?.telefono ?: "") }
-    var direccion by remember { mutableStateOf(usuarioExistente?.direccion ?: "") }
-    var region by remember { mutableStateOf(usuarioExistente?.region ?: "") }
-    var comuna by remember { mutableStateOf(usuarioExistente?.comuna ?: "") }
-    var rol by remember { mutableStateOf(usuarioExistente?.rol ?: Rol.USUARIO) }
+    var username by remember { mutableStateOf(usuarioExistente?.username ?: "") }
+    var rut by remember { mutableStateOf(usuarioExistente?.rut ?: "") }
+    var password by remember { mutableStateOf(usuarioExistente?.password ?: "") }
+    var rolSeleccionado by remember { mutableStateOf(usuarioExistente?.rol ?: Rol.USUARIO) }
 
-    // FOTO
+    // --- LÓGICA DE IMAGEN ---
+
+    // 1. Inicializamos con la foto que ya tenga el usuario (si estamos editando)
     var imagenUri by remember { mutableStateOf<Uri?>(null) }
-    var rutaImagenFinal by remember { mutableStateOf(usuarioExistente?.fotoPerfil ?: "") }
+    var imagenGuardadaRuta by remember { mutableStateOf(usuarioExistente?.fotoPerfil ?: "") }
 
-    var fechaNacimientoSeleccionada by remember { mutableStateOf(usuarioExistente?.fechaNacimiento) }
-    val fechaVisual = fechaNacimientoSeleccionada?.let { dateFormat.format(it) } ?: ""
+    // 2. Preparamos el archivo temporal único para este formulario
+    // Usamos la función que pusimos al final del archivo
+    val archivoTemporal = remember { crearArchivoImagenFormulario(context) }
 
-    var mensajeError by remember { mutableStateOf<String?>(null) }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var mostrarCalendario by remember { mutableStateOf(false) }
+    val uriTemporal = remember {
+        FileProvider.getUriForFile(
+            Objects.requireNonNull(context),
+            context.packageName + ".provider",
+            archivoTemporal
+        )
+    }
 
-    // PREPARACIÓN DE ARCHIVOS
-    val archivoTemporal = remember { crearArchivoImagen(context) }
-    val uriTemporal = remember { FileProvider.getUriForFile(Objects.requireNonNull(context), context.packageName + ".provider", archivoTemporal) }
-
-    // 1. LAUNCHER CÁMARA
+    // 3. Launcher de CÁMARA (Guarda directo en el archivo temporal)
     val launcherCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
         if (exito) {
             imagenUri = uriTemporal
-            rutaImagenFinal = uriTemporal.toString()
+            imagenGuardadaRuta = archivoTemporal.absolutePath
         }
     }
-    val launcherPermisoCamara = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) launcherCamara.launch(uriTemporal) }
 
-    // 2. LAUNCHER GALERÍA (NUEVO)
+    // 4. Launcher de PERMISOS
+    val launcherPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { esConcedido ->
+        if (esConcedido) launcherCamara.launch(uriTemporal)
+        else Toast.makeText(context, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
+    }
+
+    // 5. Launcher de GALERÍA (Tu lógica corregida con .use) ✅
     val launcherGaleria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
-            // Copiamos la imagen de galería al archivo temporal para tener control total
             try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val outputStream = java.io.FileOutputStream(archivoTemporal)
-                inputStream?.copyTo(outputStream)
-                inputStream?.close()
-                outputStream.close()
+                // ✅ CORRECCIÓN: Usamos .use para cerrar los flujos automáticamente y evitar errores
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    java.io.FileOutputStream(archivoTemporal).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
 
-                // Usamos la URI de nuestro archivo local (uriTemporal)
                 imagenUri = uriTemporal
-                rutaImagenFinal = uriTemporal.toString()
+                imagenGuardadaRuta = archivoTemporal.absolutePath
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Fallback si falla la copia
-                imagenUri = uri
-                rutaImagenFinal = uri.toString()
             }
         }
     }
-    //este cambio no se quiere guardar
-
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaNacimientoSeleccionada?.time)
-    val esEdicion = usuarioExistente != null
-    val scrollState = rememberScrollState()
-
-    var expanded by remember { mutableStateOf(false) }
-    var textFieldSize by remember { mutableStateOf(Size.Zero) }
-    val icon = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-
-    if (mostrarCalendario) {
-        DatePickerDialog(
-            onDismissRequest = { mostrarCalendario = false },
-            confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { fechaNacimientoSeleccionada = Date(it) }; mostrarCalendario = false }) { Text("Aceptar") } },
-            dismissButton = { TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") } }
-        ) { DatePicker(state = datePickerState) }
-    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (esEdicion) "Editar Usuario" else "Nuevo Usuario") },
-                navigationIcon = { IconButton(onClick = onCancelar) { Icon(Icons.Default.ArrowBack, "Cancelar") } }
-            )
-        }
-    ) { paddingValues ->
+        topBar = { TopAppBar(title = { Text(if (usuarioExistente == null) "Nuevo Usuario" else "Editar Usuario") }) }
+    ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).verticalScroll(scrollState).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // FOTO
+
+            // --- VISUALIZADOR DE FOTO ---
             Box(contentAlignment = Alignment.BottomEnd) {
-                val imagenParaMostrar = if(imagenUri != null) imagenUri else if(rutaImagenFinal.isNotEmpty()) rutaImagenFinal else null
+                // Lógica de qué mostrar: ¿Hay nueva URI? -> úsala. ¿Si no, hay ruta guardada? -> úsala.
+                val imagenParaMostrar = if (imagenUri != null) imagenUri
+                else if (imagenGuardadaRuta.isNotEmpty()) imagenGuardadaRuta
+                else null
 
                 if (imagenParaMostrar != null) {
                     Image(
                         painter = rememberAsyncImagePainter(model = imagenParaMostrar),
                         contentDescription = null,
-                        modifier = Modifier.size(100.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                        modifier = Modifier.size(120.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(50.dp))
+                    Box(modifier = Modifier.size(120.dp).clip(CircleShape).background(Color.LightGray), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(60.dp))
                     }
                 }
 
-                // BOTONES DE FOTO (CÁMARA Y GALERÍA)
-                Row(
-                    modifier = Modifier.offset(y = 10.dp), // Bajamos un poco los botones
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Botón Cámara
+                // Botones pequeños para cambiar foto
+                Row(modifier = Modifier.offset(y = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SmallFloatingActionButton(
                         onClick = {
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                                PackageManager.PERMISSION_GRANTED) launcherCamara.launch(uriTemporal)
-                            else launcherPermisoCamara.launch(Manifest.permission.CAMERA)
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+                                launcherCamara.launch(uriTemporal)
+                            else launcherPermiso.launch(Manifest.permission.CAMERA)
                         },
                         containerColor = MaterialTheme.colorScheme.primary
                     ) { Icon(Icons.Default.CameraAlt, "Cámara") }
 
-                    // Botón Galería
                     SmallFloatingActionButton(
-                        onClick = { launcherGaleria.launch("image/*") },
+                        onClick = { launcherGaleria.launch("image/*") }, // Lanza el selector corregido
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                     ) { Icon(Icons.Default.Image, "Galería") }
                 }
             }
 
-            // Espacio extra por los botones flotantes
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(value = rut, onValueChange = { rut = it.uppercase() }, label = { Text("RUT *") }, modifier = Modifier.fillMaxWidth())
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = apellido, onValueChange = { apellido = it }, label = { Text("Apellido") }, modifier = Modifier.weight(1f))
-            }
+            // --- CAMPOS ---
+            OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = apellido, onValueChange = { apellido = it }, label = { Text("Apellido") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
-
-            // Fecha
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(value = fechaVisual, onValueChange = {}, label = { Text("Nacimiento") }, readOnly = true, trailingIcon = { IconButton(onClick = { mostrarCalendario = true }) { Icon(Icons.Default.DateRange, null) } }, modifier = Modifier.fillMaxWidth())
-            }
-
             OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = rut, onValueChange = { rut = it }, label = { Text("RUT") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth())
 
-            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Contraseña") }, visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(), trailingIcon = { IconButton(onClick = { passwordVisible = !passwordVisible }) { Text(if(passwordVisible) "Ocultar" else "Ver") } }, modifier = Modifier.fillMaxWidth())
-
-            OutlinedTextField(value = telefono, onValueChange = { telefono = it }, label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth())
-
-            SelectorRegionComuna(region, comuna, { region = it; comuna = "" }, { comuna = it })
-            OutlinedTextField(value = direccion, onValueChange = { direccion = it }, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
-
-            // Rol
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(value = rol.name, onValueChange = {}, modifier = Modifier.fillMaxWidth().onGloballyPositioned { textFieldSize = it.size.toSize() }, label = { Text("Rol") }, readOnly = true, trailingIcon = { Icon(icon, null, Modifier.clickable { expanded = !expanded }) })
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })) {
-                    Rol.entries.forEach { s -> DropdownMenuItem(text = { Text(s.name) }, onClick = { rol = s; expanded = false }) }
-                }
+            // Selector de Rol
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Rol: ", style = MaterialTheme.typography.bodyLarge)
+                Spacer(modifier = Modifier.width(8.dp))
+                FilterChip(selected = rolSeleccionado == Rol.USUARIO, onClick = { rolSeleccionado = Rol.USUARIO }, label = { Text("Usuario") })
+                Spacer(modifier = Modifier.width(8.dp))
+                FilterChip(selected = rolSeleccionado == Rol.ADMIN, onClick = { rolSeleccionado = Rol.ADMIN }, label = { Text("Admin") })
             }
 
-            if (mensajeError != null) Text(mensajeError!!, color = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = {
-                    if (rut.isNotBlank() && nombre.isNotBlank()) {
-                        val usuario = Usuario(
+            // BOTONES
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                OutlinedButton(onClick = onCancelar, modifier = Modifier.weight(1f)) { Text("Cancelar") }
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(
+                    onClick = {
+                        val usuarioAGuardar = Usuario(
                             id = usuarioExistente?.id ?: "",
-                            rut = rut, nombre = nombre, apellido = apellido,
-                            fechaNacimiento = fechaNacimientoSeleccionada ?: Date(),
-                            username = username, email = email,
-                            password = password.takeIf { it.isNotBlank() } ?: usuarioExistente?.password ?: "",
-                            telefono = telefono, direccion = direccion, comuna = comuna, region = region,
-                            fechaRegistro = usuarioExistente?.fechaRegistro ?: Date(),
-                            rol = rol,
-                            fotoPerfil = rutaImagenFinal // ✅
+                            nombre = nombre,
+                            apellido = apellido,
+                            email = email,
+                            username = username,
+                            rut = rut,
+                            password = password,
+                            rol = rolSeleccionado,
+                            fotoPerfil = imagenGuardadaRuta,
+
+                            // ✅ CORRECCIÓN: Agregamos los campos que faltaban
+                            // Si el usuario existe, mantenemos sus datos. Si es nuevo, ponemos vacío o fecha actual.
+                            telefono = usuarioExistente?.telefono ?: "",
+                            region = usuarioExistente?.region ?: "",
+                            comuna = usuarioExistente?.comuna ?: "",
+                            direccion = usuarioExistente?.direccion ?: "",
+                            fechaNacimiento = usuarioExistente?.fechaNacimiento ?: Date(),
+                            fechaRegistro = usuarioExistente?.fechaRegistro ?: Date()
                         )
-                        onGuardar(usuario)
-                    } else {
-                        mensajeError = "Faltan datos"
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(if (esEdicion) "Actualizar" else "Guardar") }
+                        onGuardar(usuarioAGuardar)
+                    },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Guardar") }
+            }
         }
     }
+}
+
+
+fun crearArchivoImagenFormulario(context: Context): File {
+    // Quitamos "pattern =" para evitar errores en versiones viejas de Java/Android
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val imageFileName = "JPEG_" + timeStamp + "_"
+    return File.createTempFile(
+        imageFileName,
+        ".jpg",
+        context.externalCacheDir
+    )
 }

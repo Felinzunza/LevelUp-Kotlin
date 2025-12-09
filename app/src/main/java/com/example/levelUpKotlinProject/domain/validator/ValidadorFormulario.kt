@@ -3,12 +3,7 @@ package com.example.levelUpKotlinProject.domain.validator
 import com.example.levelUpKotlinProject.domain.model.ErroresFormulario
 import com.example.levelUpKotlinProject.domain.model.FormularioRegUsuario
 
-/**
- * Validador de formulario de registro
- * Usa expresiones regulares para validar cada campo
- * 
- * Autor: Prof. Sting Adams Parra Silva
- */
+
 object ValidadorFormulario {
     
     // Regex para email: algo@algo.com

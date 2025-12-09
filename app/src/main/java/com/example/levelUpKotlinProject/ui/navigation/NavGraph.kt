@@ -44,7 +44,19 @@ fun NavGraph(
         // Ruta 0: Portada
         composable(route = Rutas.PORTADA) {
             PortadaScreen(
-                onEntrarClick = { navController.navigate(Rutas.OPCIONES_ACCESO) },
+                {
+                    // ✅ LÓGICA DE REDIRECCIÓN INTELIGENTE
+                    if (preferenciasManager.estaUsuarioLogueado()) {
+                        // CASO 1: Ya está logueado -> Directo a la Tienda (Home)
+                        navController.navigate(Rutas.HOME) {
+                            // Esto borra la portada del historial para que al volver atrás no regrese aquí
+                            popUpTo(Rutas.PORTADA) { inclusive = true }
+                        }
+                    } else {
+                        // CASO 2: No está logueado -> A elegir (Login / Registro / Invitado)
+                        navController.navigate(Rutas.OPCIONES_ACCESO)
+                    }
+                },
                 onAdminClick = { navController.navigate(Rutas.LOGIN_ADMIN) }
             )
         }
@@ -179,8 +191,17 @@ fun NavGraph(
         composable(route = Rutas.REGISTRO) {
             RegistroScreen(
                 usuarioRepository = usuarioRepository,
+                preferenciasManager = preferenciasManager,
+
                 onVolverClick = { navController.popBackStack() },
-                onRegistroExitoso = { navController.navigate(Rutas.HOME) { popUpTo(Rutas.HOME) { inclusive = true } } }
+
+                // CAMBIO: Al terminar, vamos directo al HOME (Auto-login)
+                onRegistroExitoso = {
+                    navController.navigate(Rutas.HOME) {
+                        // Esto borra la portada y el login de la pila "atrás"
+                        popUpTo(Rutas.PORTADA) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -203,7 +224,11 @@ fun NavGraph(
                     preferenciasManager.guardarSesionAdmin(username)
                     navController.navigate(Rutas.PANEL_ADMIN) { popUpTo(Rutas.LOGIN_ADMIN) { inclusive = true } }
                 },
-                onVolverClick = { navController.popBackStack() }
+                onVolverClick = {
+                    navController.navigate(Rutas.PORTADA) {
+                        popUpTo(0) //
+                    }
+                }
             )
         }
 

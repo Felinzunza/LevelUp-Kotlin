@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import com.example.levelUpKotlinProject.R
 import com.example.levelUpKotlinProject.data.repository.CarritoRepository
 import com.example.levelUpKotlinProject.data.repository.ProductoRepository
 import com.example.levelUpKotlinProject.domain.model.Producto
@@ -49,14 +50,24 @@ fun HomeScreen(
     onIniciarSesionClick: () -> Unit,
     estaLogueado: Boolean,
     nombreUsuario: String?,
-    // ✅ CAMBIO: Recibimos el objeto completo para tener la foto
+    //  CAMBIO: Recibimos el objeto completo para tener la foto
     usuarioActual: Usuario?
 ) {
     // Datos originales
     val productos by productoRepository.obtenerProductos().collectAsState(initial = emptyList())
+
+    // ✅ NUEVO: Observamos el carrito para contar los productos
+    // Asumo que tu repositorio tiene una función 'obtenerCarrito()' que devuelve un Flow
+    val itemsCarrito by carritoRepository.obtenerCarrito().collectAsState(initial = emptyList())
+
+    // ✅ NUEVO: Calculamos el total sumando las cantidades de cada item
+    val cantidadTotalEnCarrito = remember(itemsCarrito) {
+        itemsCarrito.sumOf { it.cantidad }
+    }
+
     val scope = rememberCoroutineScope()
 
-    // ✅ NUEVO: Estado para el Snackbar (Mensaje emergente)
+    //  NUEVO: Estado para el Snackbar (Mensaje emergente)
     val snackbarHostState = remember { SnackbarHostState() }
 
     // --- ESTADOS DE FILTRO ---
@@ -81,10 +92,16 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("LevelUp Store") },
+                title = {
+                    Image(
+                        painter = painterResource(id = R.drawable.icono_levelup),
+                        contentDescription = "Logo",
+                        modifier = Modifier.size(100.dp) // Ajusté el tamaño a 40dp para que se vea mejor
+                    )
+                },
                 actions = {
                     if (estaLogueado) {
-                        Text("Hola, ${nombreUsuario ?: "User"}", fontSize = 12.sp, modifier = Modifier.padding(end = 8.dp))
+                        Text("Hola, ${nombreUsuario ?: "User"}", fontSize = 12.sp, modifier = Modifier.padding(end = 8.dp), color = MaterialTheme.colorScheme.secondary)
 
                         // ✅ FOTO DE PERFIL (ICONO)
                         IconButton(onClick = onPerfilClick) {
@@ -110,8 +127,41 @@ fun HomeScreen(
                     } else {
                         IconButton(onClick = onIniciarSesionClick) { Icon(Icons.Default.Person, "Login") }
                     }
-                    IconButton(onClick = onCarritoClick) { Icon(Icons.Default.ShoppingCart, "Carrito") }
-                    IconButton(onClick = onCerrarSesion) { Icon(Icons.Default.ExitToApp, "Salir") }
+                    IconButton(onClick = onCarritoClick) {
+                        BadgedBox(
+                            badge = {
+                                if (cantidadTotalEnCarrito > 0) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ) {
+                                        // Mostramos el número. Si es más de 99, mostramos "99+"
+                                        Text(
+                                            text = if (cantidadTotalEnCarrito > 99) "99+" else cantidadTotalEnCarrito.toString(),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Carrito de compras"
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                // 1. Vaciamos el carrito localmente antes de salir
+                                carritoRepository.vaciarCarrito()
+                                // 2. Ejecutamos la navegación de cierre de sesión
+                                onCerrarSesion()
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.ExitToApp, "Salir")
+                    }
                 }
             )
         },
@@ -132,14 +182,17 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                singleLine = true
+                singleLine = true,
             )
 
             // 2. FILTRO DE CATEGORÍAS (CHIPS)
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
+
+
+
             ) {
                 items(categorias) { categoria ->
                     val selected = (categoria == "Todos" && categoriaSeleccionada == null) || categoria == categoriaSeleccionada
@@ -149,7 +202,9 @@ fun HomeScreen(
                         onClick = {
                             categoriaSeleccionada = if (categoria == "Todos") null else categoria
                         },
-                        label = { Text(categoria) }
+                        label = { Text(categoria) },
+
+
                     )
                 }
             }

@@ -430,7 +430,10 @@ fun BotonFinalizarCompra(
                 }
             }
         },
-        modifier = Modifier.fillMaxWidth().height(50.dp)
+        modifier = Modifier.fillMaxWidth().height(50.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+
     ) {
         val texto = if (preferenciasManager.estaUsuarioLogueado())
             "PAGAR ${formatearPrecio(totalPagar)}"

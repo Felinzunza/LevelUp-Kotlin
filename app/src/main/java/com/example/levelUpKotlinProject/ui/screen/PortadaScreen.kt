@@ -60,7 +60,7 @@ fun PortadaScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Column(
@@ -77,7 +77,7 @@ fun PortadaScreen(
                         text = "Periféricos • Audio • Video\nMonitores • Almacenamiento • Mobiliario",
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 1.3f)
                     )
                 }
             }

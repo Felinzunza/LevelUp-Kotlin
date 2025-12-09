@@ -51,7 +51,10 @@ data class UsuarioDto(
     val fechaRegistro: String,
 
     @SerializedName("role")
-    val rol: String
+    val rol: String,
+
+    @SerializedName("image")
+    val fotoPerfil: String? = null
 )
 
 fun UsuarioDto.aModelo(): Usuario{
@@ -84,7 +87,8 @@ fun UsuarioDto.aModelo(): Usuario{
             Rol.valueOf(rol)
         } catch (e: Exception) {
             Rol.USUARIO
-        }
+        },
+        fotoPerfil = fotoPerfil ?: ""
 )
 }
 
@@ -103,7 +107,8 @@ fun Usuario.aDto(): UsuarioDto {
         comuna=comuna,
         region=region,
         fechaRegistro = fechaRegistro.toString(),
-        rol = rol.name
+        rol = rol.name,
+        fotoPerfil = fotoPerfil
 
     )
 
